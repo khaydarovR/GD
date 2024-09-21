@@ -1,0 +1,57 @@
+﻿@using Microsoft.AspNetCore.SignalR.Client
+
+
+@page "/pos"
+
+<h3>PosHubTest</h3>
+
+
+@inject NavigationManager NavigationManager
+@inject HttpClient HttpClient
+
+<h3>Position Tracking</h3>
+
+<input @bind="userName" placeholder="Enter your name" />
+<input @bind="position" placeholder="Enter your position" />
+<button @onclick="SendPosition">Send Position</button>
+
+@code {
+    private string userName;
+    private string position;
+
+    private HubConnection hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var url = new Uri(HttpClient.BaseAddress + "poshub");
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(url)
+            .Build();
+
+        hubConnection.On<string, string>("GetPos", (user, pos) =>
+        {
+            Console.WriteLine($"{user} is at position {pos}");
+            // You can update the UI or perform any other action here
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    private async Task SendPosition()
+    {
+        await hubConnection.SendAsync("SendPos", userName, position);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}
+
+
+@code {
+
+}
