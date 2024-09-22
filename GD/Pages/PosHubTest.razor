@@ -21,6 +21,7 @@
 
     private HubConnection hubConnection;
 
+
     protected override async Task OnInitializedAsync()
     {
         var url = new Uri(HttpClient.BaseAddress + "poshub");
@@ -33,13 +34,19 @@
             Console.WriteLine($"{user} is at position {pos}");
             // You can update the UI or perform any other action here
         });
+        hubConnection.On<string, string>("Receive", (user, msg) =>
+        {
+            Console.WriteLine($"Receive {user} : {msg}");
 
+            _snakbar.Add($"{user}: {msg}");
+        });
+        
         await hubConnection.StartAsync();
     }
 
     private async Task SendPosition()
     {
-        await hubConnection.SendAsync("SendPos", userName, position);
+        await hubConnection.SendAsync("Send", userName, position);
     }
 
     public async ValueTask DisposeAsync()
