@@ -19,11 +19,16 @@ namespace GD.Api.DB.Models
         public double TargetPosLati { get; set; }
         public double TargetPosLong { get; set; }
         public string ToAddress { get; set; }
-        public DateTime At { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime StartDeliveryAt { get; set; }
+        public DateTime OrderClosedAt { get; set; }
+
+        /// <summary>
+        /// Наличка, Карта, Онлайн
+        /// </summary>
         public string PayMethod { get; set; }
         public double TotalPrice { get; set; }
         public string Status { get; set; }
-        [ForeignKey(nameof(GDUser.Id))]
         public Guid? CourierId { get; set; }
         public List<OrderItem> Basket { get; set; }
     }
@@ -32,7 +37,10 @@ namespace GD.Api.DB.Models
     {
         public Guid Id { get; set; }
         public Guid OrderId { get; set; }
+        public Order Order { get; set; }
+
         public Guid ProductId { get; set; }
+        public Product Product { get; set; }
         public int Amount { get; set; }
     }
 }

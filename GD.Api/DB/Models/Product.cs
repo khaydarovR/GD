@@ -10,5 +10,23 @@
         public string Tags { get; set; }
         public int Amount { get; set; }
 
+        public List<Feedback> Feedbacks { get;set;}
     }
+
+    public class Feedback
+    {
+        public Guid Id { get; set; }
+
+        public Guid ProductId { get; set; }
+        public Product Product { get; set; }
+
+        public int Starts { get; set; }
+        
+        public Guid ClientId { get; set; }
+        public GDUser Client { get; set; }
+        
+        public Guid Text { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
 }
