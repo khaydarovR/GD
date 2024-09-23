@@ -74,17 +74,17 @@ namespace GD.Services
             {
                 var errorMsg = $"Не удалось прочитать ошибки c сервера | URL: {url}";
                 logger.LogError($"{errorMsg}\n{ex.Message}\nСервер должен отправить - {typeof(ErrorResponse).FullName}");
-                snack.Add(errorMsg);
+                snack.Add(errorMsg, Severity.Error);
                 return new Res<TResponse>(errorText: errorMsg);
             }
 
             if (errorResponse == null || errorResponse.Messages == null || errorResponse.Messages.Count == 0)
             {
                 var txt = $"Сервер не отправил список ошибок | URL: {url}";
-                snack.Add(txt);
+                snack.Add(txt, Severity.Error);
                 return new Res<TResponse>(errorText: txt);
             }
-            snack.Add(errorResponse.Messages.First());
+            snack.Add(errorResponse.Messages.First(), Severity.Error);
             return new Res<TResponse>(errorTexts: errorResponse.Messages);
         }
 
@@ -99,7 +99,9 @@ namespace GD.Services
             catch (Exception ex)
             {
                 var json = await httpResponseMessage.Content.ReadAsStringAsync();
-                logger.LogError($"Ошибка десериализации :\n{json}\n=>\n{typeof(TResponse).FullName}\nURL: {url}");
+                var errTxt = $"Ошибка десериализации :\n{json}\n=>\n{typeof(TResponse).FullName}\nURL: {url}";
+                logger.LogError(errTxt);
+                snack.Add(errTxt, Severity.Error);
                 return new Res<TResponse>(errorText: $"Не удалось преоброзвать полученный JSON в " + typeof(TResponse).Name + $" | URL: {url}");
             }
 
@@ -111,7 +113,7 @@ namespace GD.Services
         {
             var errorMsg = $"Ошибка на стороне сервера | URL: {url}";
             logger.LogError($"{errorMsg}");
-            snack.Add(errorMsg);
+            snack.Add(errorMsg, Severity.Error);
             return new Res<TResponse>(errorText: errorMsg);
         }
 
@@ -121,7 +123,7 @@ namespace GD.Services
             logger.LogError($"{errorMsg}");
 
             //TODO: обновить состояние авторизации, перенаправить в /login
-            snack.Add(errorMsg);
+            snack.Add(errorMsg, Severity.Error);
             return new Res<TResponse>(errorText: errorMsg);
         }
 
@@ -131,7 +133,7 @@ namespace GD.Services
 
             var errorMsg = $"Недостаточно прав: {res.ErrorList.Messages.First()}";
             logger.LogError($"{errorMsg}");
-            snack.Add(errorMsg);
+            snack.Add(errorMsg, Severity.Error);
             return new Res<TResponse>(errorText: errorMsg);
         }
     }
