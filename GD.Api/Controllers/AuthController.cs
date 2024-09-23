@@ -32,6 +32,13 @@ namespace GD.Api.Controllers
             }
 
             u = await um.FindByEmailAsync(dto.Email);
+            var isValidPwd = await um.CheckPasswordAsync(u, dto.Pwd);
+            if (isValidPwd==false)
+            {
+                var notValid = new Res<bool>("Не правильный пароль");
+                return BadRequest(notValid.ErrorList);
+            }
+
             var uClaims = await um.GetClaimsAsync(u);
 
             var jwt = new JwtSecurityToken(

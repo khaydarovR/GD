@@ -129,7 +129,7 @@ namespace GD.Services
         {
             var res = await HandleBadRequest<TResponse>(url, httpResponseMessage);
 
-            var errorMsg = $"Недостаточно прав: {res.ErrorList.First()}";
+            var errorMsg = $"Недостаточно прав: {res.ErrorList.Messages.First()}";
             logger.LogError($"{errorMsg}");
             snack.Add(errorMsg);
             return new Res<TResponse>(errorText: errorMsg);

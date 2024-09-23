@@ -1,8 +1,49 @@
 ﻿
-<h3>Acc</h3>
+@page "/acc"
+@using System.Security.Claims
 
+
+
+<MudPaper>
+    <MudText Typo="Typo.h5">@authMessage</MudText>
+
+    <MudList T="string">
+        @foreach (var claim in claims)
+        {
+            <MudListItem>
+                @claim.Type: @claim.Value
+            </MudListItem>
+        }
+    </MudList>
+</MudPaper>
 
 
 @code {
+    private string? authMessage;
+    private string? surname;
+    private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
 
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetClaimsPrincipalData();
+        StateHasChanged();
+    }
+
+    private async Task GetClaimsPrincipalData()
+    {
+        var authState = await _auth
+            .GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            authMessage = $"{user.Identity.Name}";
+            claims = user.Claims;
+        }
+        else
+        {
+            authMessage = "The user is NOT authenticated.";
+        }
+    }
 }

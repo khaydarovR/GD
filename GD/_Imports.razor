@@ -11,10 +11,14 @@
 @using GD
 @using GD.Layout
 @using MudBlazor
+@using Blazored.LocalStorage;
 
 
 @inject ISnackbar _snakbar
 @inject HttpService _http
 @inject AuthenticationStateProvider _auth
+@inject ILocalStorageService _ls
+@inject NavigationManager _nm
+
 
 

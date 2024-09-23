@@ -2,9 +2,11 @@
 @using System.ComponentModel.DataAnnotations
 @using GD.Shared.Request
 @using GD.Shared.Response
+@using System.Security.Claims
 
 
 @page "/login"
+
 
 <MudGrid>
     <MudItem xs="12" sm="7">
@@ -31,15 +33,6 @@
         </MudPaper>
         
     </MudItem>
-    <MudItem xs="12" sm="5">
-        <MudPaper Class="pa-4 mud-height-full">
-            <MudText Typo="Typo.subtitle2">@($"Errors ({errors.Length})")</MudText>
-            @foreach (var error in errors)
-            {
-                <MudText Color="@Color.Error">@error</MudText>
-            }
-        </MudPaper>
-    </MudItem>
 </MudGrid>
 
 
@@ -52,6 +45,7 @@
     MudTextField<string> pwField1;
     MudForm form;
 
+
     async Task OnLogin()
     {
         var dto = new SignInRequest() { Email = Email, Pwd = Pwd };
@@ -59,11 +53,13 @@
         var res = await _http.Get<SignInResponse>($"api/Auth/SignIn?Email={dto.Email}&Pwd={dto.Pwd}");
         if (res.IsSuccess)
         {
-            
+            await _ls.SetItemAsStringAsync("JWT", res.Data!.Jwt);
+            _nm.NavigateTo("/acc");
         }
 
-        
     }
+
+  
 
     private IEnumerable<string> PasswordStrength(string pw)
     {
