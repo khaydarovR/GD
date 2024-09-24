@@ -76,6 +76,7 @@ namespace GD.Api.Controllers
             };
 
             var res = await um.CreateAsync(newuser, dto.Pwd);
+            await um.AddToRoleAsync(newuser, GDUserRoles.ClientRole);
             if (res.Succeeded)
             {
                 u = await um.FindByEmailAsync(dto.Email);

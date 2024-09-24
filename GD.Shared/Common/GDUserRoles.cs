@@ -4,7 +4,5 @@
     {
         public const string ClientRole = "Client";
         public const string AdminRole = "Admin";
-        public const string Root = "Root";
-
     }
 }

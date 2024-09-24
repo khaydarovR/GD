@@ -21,9 +21,5 @@ namespace GD.Api.DB
         { 
             Database.EnsureCreated();
         }
-
-
-
-
     }
 }
