@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace GD.Api.DB.Models
 {
@@ -23,8 +23,10 @@ namespace GD.Api.DB.Models
         public DateTime? StartDeliveryAt { get; set; }
         public DateTime? OrderClosedAt { get; set; }
         public Guid ClientId { get; set; }
+        [JsonIgnore]
         public GDUser Client { get; set; }
         
+        [JsonIgnore]
         public Product Product { get; set; }
         public Guid ProductId { get; set; }
         public int Amount { get; set; }

@@ -1,4 +1,6 @@
-﻿namespace GD.Api.DB.Models
+﻿using System.Text.Json.Serialization;
+
+namespace GD.Api.DB.Models
 {
     public class Product
     {
@@ -18,11 +20,13 @@
         public Guid Id { get; set; }
 
         public Guid ProductId { get; set; }
+        [JsonIgnore]
         public Product Product { get; set; }
 
         public int Stars { get; set; }
         
         public Guid ClientId { get; set; }
+        [JsonIgnore]
         public GDUser Client { get; set; }
         
         public string Text { get; set; }

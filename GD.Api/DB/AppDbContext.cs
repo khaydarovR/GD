@@ -22,5 +22,17 @@ namespace GD.Api.DB
         { 
             Database.EnsureCreated();
         }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            builder.Entity<Product>(enity =>
+            {
+                enity.HasMany(p => p.Feedbacks)
+                    .WithOne(p => p.Product)
+                    .HasForeignKey(p => p.ProductId);
+            });
+            
+            base.OnModelCreating(builder);
+        }
     }
 }

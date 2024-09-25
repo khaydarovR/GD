@@ -33,7 +33,10 @@ public class FeedbackController : CustomController
         var feedback = request.Adapt<Feedback>();
         feedback.ClientId = ContextUserId;
         feedback.CreatedAt = DateTime.UtcNow;
+        
         await _appDbContext.Feedbacks.AddAsync(feedback);
+        await _appDbContext.SaveChangesAsync();
+        
         return Ok(feedback);
     }
     
