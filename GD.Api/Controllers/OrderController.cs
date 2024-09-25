@@ -35,6 +35,7 @@ public class OrderController : CustomController
         order.CreatedAt = DateTime.UtcNow;
         order.Status = "Waiting";
         order.TotalPrice = product.Price * orderRequest.Amount;
+        order.ClientId = ContextUserId;
         
         await _appDbContext.Orders.AddAsync(order);
         await _appDbContext.SaveChangesAsync();

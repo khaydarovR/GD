@@ -47,5 +47,11 @@ public class ClientController : CustomController
         await _appDbContext.SaveChangesAsync();
         return Ok(user);
     }
+    
+    [HttpGet("basket")]
+    public async Task<IActionResult> GetBasket()
+    {
+        return Ok(_appDbContext.Orders.Where(o => o.ClientId == ContextUserId));
+    }
 
 }
