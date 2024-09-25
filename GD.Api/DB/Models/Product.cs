@@ -20,12 +20,12 @@
         public Guid ProductId { get; set; }
         public Product Product { get; set; }
 
-        public int Starts { get; set; }
+        public int Stars { get; set; }
         
         public Guid ClientId { get; set; }
         public GDUser Client { get; set; }
         
-        public Guid Text { get; set; }
+        public string Text { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 

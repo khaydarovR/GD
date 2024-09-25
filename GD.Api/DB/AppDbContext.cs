@@ -1,4 +1,5 @@
 ﻿using GD.Api.DB.Models;
+using GD.Shared.Request;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,8 @@ namespace GD.Api.DB
 
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderItem> OrderItem { get; set; }
+        public DbSet<Basket> Baskets { get; set; }
+        public DbSet<Feedback> Feedbacks { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options): base(options)
         { 

@@ -20,9 +20,13 @@ namespace GD.Api.DB.Models
         public double TargetPosLong { get; set; }
         public string ToAddress { get; set; }
         public DateTime CreatedAt { get; set; }
-        public DateTime StartDeliveryAt { get; set; }
-        public DateTime OrderClosedAt { get; set; }
-
+        public DateTime? StartDeliveryAt { get; set; }
+        public DateTime? OrderClosedAt { get; set; }
+        
+        public Product Product { get; set; }
+        public Guid ProductId { get; set; }
+        public int Amount { get; set; }
+        
         /// <summary>
         /// Наличка, Карта, Онлайн
         /// </summary>
@@ -30,17 +34,16 @@ namespace GD.Api.DB.Models
         public double TotalPrice { get; set; }
         public string Status { get; set; }
         public Guid? CourierId { get; set; }
-        public List<OrderItem> Basket { get; set; }
+        public Guid BasketId { get; set; }
+        public Basket Basket { get; set; }
     }
 
-    public class OrderItem
+    public class Basket
     {
         public Guid Id { get; set; }
-        public Guid OrderId { get; set; }
-        public Order Order { get; set; }
+        public Guid ClientId { get; set; }
+        public GDUser Client { get; set; }
 
-        public Guid ProductId { get; set; }
-        public Product Product { get; set; }
-        public int Amount { get; set; }
+        public List<Order> Orders { get; set; } = [];
     }
 }

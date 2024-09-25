@@ -39,7 +39,8 @@ namespace GD.Api.Controllers
                 return BadRequest(notValid.ErrorList);
             }
 
-            var uClaims = await um.GetClaimsAsync(u);
+            var role = (await um.GetRolesAsync(u)).FirstOrDefault();
+            var uClaims = CreateClaims(u, role!);
 
             var jwt = new JwtSecurityToken(
                     issuer: AuthOptions.ISSUER,
@@ -54,14 +55,14 @@ namespace GD.Api.Controllers
             return Ok(rsp);
         }
 
-        private static List<Claim> CreateClaims(GDUser? u)
+        private static List<Claim> CreateClaims(GDUser? u, string role)
         {
             return new List<Claim>
             {
                 new Claim(GDUserClaimTypes.Email, u.Email!),
                 new Claim(GDUserClaimTypes.UserName, u.UserName.ToString()),
                 new Claim(GDUserClaimTypes.Id, u.Id.ToString()),
-                new Claim(GDUserClaimTypes.Roles, GDUserRoles.ClientRole),
+                new Claim(GDUserClaimTypes.Roles, role),
             };
         }
 
@@ -76,11 +77,11 @@ namespace GD.Api.Controllers
             };
 
             var res = await um.CreateAsync(newuser, dto.Pwd);
-            await um.AddToRoleAsync(newuser, GDUserRoles.ClientRole);
+            await um.AddToRoleAsync(newuser, GDUserRoles.Client);
             if (res.Succeeded)
             {
                 u = await um.FindByEmailAsync(dto.Email);
-                var resClaim = await um.AddClaimsAsync(u, CreateClaims(u));
+                var resClaim = await um.AddClaimsAsync(u, CreateClaims(u, GDUserRoles.Client));
                 if (resClaim.Succeeded)
                 {
                     return new Res<bool>(true);

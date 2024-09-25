@@ -2,7 +2,8 @@
 {
     public class GDUserRoles
     {
-        public const string ClientRole = "Client";
-        public const string AdminRole = "Admin";
+        public const string Client = "Client";
+        public const string Admin = "Admin";
+        public const string Courier = "Courier";
     }
 }

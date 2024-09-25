@@ -22,8 +22,8 @@ builder.Services.AddLogging();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(cfg => 
-cfg.AddPolicy("allow", cfg => cfg.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+builder.Services.AddCors(cfg =>
+    cfg.AddPolicy("allow", cfg => cfg.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
 builder.Services.AddDbContext<AppDbContext>(options =>options.UseSqlite("Data Source=GDdb0.db"));
 builder.Services
@@ -39,7 +39,24 @@ builder.Services
     })
     .AddEntityFrameworkStores<AppDbContext>();
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("admin", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim(GDUserClaimTypes.Roles, GDUserRoles.Admin);
+    });
+    options.AddPolicy("client", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim(GDUserClaimTypes.Roles, GDUserRoles.Client);
+    });
+    options.AddPolicy("courier", policy =>
+    {
+        policy.RequireAuthenticatedUser();
+        policy.RequireClaim(GDUserClaimTypes.Roles, GDUserRoles.Courier);
+    });
+});
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -74,8 +91,9 @@ var app = builder.Build();
         if (!await roleManager.RoleExistsAsync(name)) await roleManager.CreateAsync(new(name) { Id = Guid.NewGuid() });
     }
 
-    await CreateRoleAsync(GDUserRoles.ClientRole);
-    await CreateRoleAsync(GDUserRoles.AdminRole);
+    await CreateRoleAsync(GDUserRoles.Client);
+    await CreateRoleAsync(GDUserRoles.Admin);
+    await CreateRoleAsync(GDUserRoles.Courier);
 }
 
 // admin seeding
@@ -86,7 +104,9 @@ var app = builder.Build();
     const string password = "a123";
     if (!userManager.Users.Any(u => u.Email == email))
     {
-        await userManager.CreateAsync(new() { Email = email, UserName = email }, password);
+        var user = new GDUser { Email = email, UserName = email };
+        await userManager.CreateAsync(user, password);
+        await userManager.AddToRoleAsync(user, GDUserRoles.Admin);
     }
 }
 
