@@ -1,4 +1,5 @@
 ﻿@page "/adminka"
+@using System.Net.Http.Headers
 @using GD.Shared.Request
 @using GD.Shared.Response
 
@@ -7,46 +8,46 @@
 <MudGrid>
     <MudItem xs="12" sm="7">
         <MudPaper Class="pa-4">
-            <MudForm @bind-IsValid="@success" @bind-Errors="@errors">
+            <MudForm>
                 <MudTextField T="string"
                               InputType="InputType.Text"
                               Label="Name"
                               Required="true"
                               RequiredError="Name is required!"
-                              @bind-Text=@Name/>
+                              @bind-Text=@_request.Name/>
 
                 <MudTextField T="string" Label="Description"
                               InputType="InputType.Text"
                               Required="true"
                               RequiredError="Description is required!"
-                              @bind-Text=@Description/>
+                              @bind-Text=@_request.Description/>
                 
-                <MudTextField T="string" Label="Description"
+                <MudTextField T="string" Label="ImageValue"
                               InputType="InputType.Text"
                               Required="true"
                               RequiredError="Description is required!"
-                              @bind-Text=@Description/>
+                              @bind-Text=@_request.ImageValue/>
                 
-                <MudTextField T="string" Label="Description"
+                <MudTextField T="double" Label="Price"
+                              InputType="InputType.Number"
+                              Required="true"   
+                              RequiredError="Description is required!"
+                              @bind-Value=@_request.Price/>
+                
+                <MudTextField T="string" Label="Tags"
                               InputType="InputType.Text"
                               Required="true"
                               RequiredError="Description is required!"
-                              @bind-Text=@Description/>
+                              @bind-Value=@_request.Tags/>
                 
-                <MudTextField T="string" Label="Description"
-                              InputType="InputType.Text"
+                <MudTextField T="double" Label="Amount"
+                              InputType="InputType.Number"
                               Required="true"
                               RequiredError="Description is required!"
-                              @bind-Text=@Description/>
-                
-                <MudTextField T="string" Label="Description"
-                              InputType="InputType.Text"
-                              Required="true"
-                              RequiredError="Description is required!"
-                              @bind-Text=@Description/>
+                              @bind-Value=@_request.Amount/>
 
                 <div class="d-flex align-center justify-space-between">
-                    <MudButton Variant="Variant.Filled" OnClick="OnLogin" Color="Color.Primary" Disabled="@(!success)" Class="ml-auto">Register</MudButton>
+                    <MudButton Variant="Variant.Filled" OnClick="OnLogin" Color="Color.Primary" Class="ml-auto">Register</MudButton>
                 </div>
             </MudForm>
         </MudPaper>
@@ -56,26 +57,24 @@
 
 
 @code {
-    string Name = "";
-    string Description = "";
-    string ImageValue = "";
-    double Price = 0;
-    string Tags = "";
-    double Amount = 0;
+    readonly Request _request = new();
     
-    
-    bool success;
-    string[] errors = { };
-
     async Task OnLogin()
     {
-        // var dto = new SignInRequest() { Email = Email, Pwd = Pwd };
-        // dto.Email = Uri.EscapeDataString(dto.Email);
-        // var res = await _http.Get<SignInResponse>($"api/Auth/SignIn?Email={dto.Email}&Pwd={dto.Pwd}");
-        // if (res.IsSuccess)
-        // {
-        //     await _ls.SetItemAsStringAsync("JWT", res.Data!.Jwt);
-        //     _nm.NavigateTo("/acc");
-        // }
+        using var client = _httpClientFactory.CreateClient("api");
+        var request = new HttpRequestMessage(HttpMethod.Post, "api/product");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
+        request.Content = JsonContent.Create(_request);
+        var response = await client.SendAsync(request);
+    }
+
+    class Request
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Tags { get; set; }
+        public string ImageValue { get; set; }
+        public double Amount { get; set; }
+        public double Price { get; set; }
     }
 }
