@@ -30,7 +30,7 @@ public class ClientController : CustomController
         user.Balance += request.Amount;
         _appDbContext.Update(user);
         await _appDbContext.SaveChangesAsync();
-        return Ok(user);
+        return Ok();
     }
 
     [HttpPost("balance/location")]

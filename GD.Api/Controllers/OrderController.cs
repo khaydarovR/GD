@@ -31,11 +31,18 @@ public class OrderController : CustomController
         var product = await _appDbContext.Products.FirstOrDefaultAsync(p => p.Id == orderRequest.ProductId);
         if (product is null) return BadRequest("товар не найден");
         
+        if (orderRequest.PayMethod.ToLower() == "online")
+        {
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == ContextUserId);
+            if (user!.Balance < orderRequest.Amount * product.Price) return BadRequest("недостаточно средств");
+        }
+        
         var order = orderRequest.Adapt<Order>();
         order.CreatedAt = DateTime.UtcNow;
         order.Status = "Waiting";
         order.TotalPrice = product.Price * orderRequest.Amount;
         order.ClientId = ContextUserId;
+        
         
         await _appDbContext.Orders.AddAsync(order);
         await _appDbContext.SaveChangesAsync();
@@ -90,6 +97,12 @@ public class OrderController : CustomController
 
         order.OrderClosedAt = DateTime.UtcNow;
         order.Status = "Delivered";
+
+        if (order.PayMethod.ToLower() == "online")
+        {
+            var client = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == order.ClientId);
+            client!.Balance -= order.TotalPrice;
+        }
         
         _appDbContext.Orders.Update(order);
         await _appDbContext.SaveChangesAsync();
