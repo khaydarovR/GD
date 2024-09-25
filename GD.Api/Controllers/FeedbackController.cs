@@ -27,10 +27,11 @@ public class FeedbackController : CustomController
         if(!await _appDbContext.Products.AnyAsync(p => p.Id == request.ProductId))
             return BadRequest("товар не найден");
         
-        if(!await _appDbContext.Users.AnyAsync(u => u.Id == request.ClientId))
+        if(!await _appDbContext.Users.AnyAsync(u => u.Id == ContextUserId))
             return BadRequest("пользователь не найден");
         
         var feedback = request.Adapt<Feedback>();
+        feedback.ClientId = ContextUserId;
         feedback.CreatedAt = DateTime.UtcNow;
         await _appDbContext.Feedbacks.AddAsync(feedback);
         return Ok(feedback);
