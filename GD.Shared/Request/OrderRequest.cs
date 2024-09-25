@@ -2,11 +2,10 @@
 
 public class OrderRequest
 {
+    public Guid OrderId { get; set; }
     public double TargetPosLati { get; set; }
     public double TargetPosLong { get; set; }
     public string ToAddress { get; set; }
-    public Guid ProductId { get; set; }
-    public int Amount { get; set; }
     /// <summary>
     /// Наличка, Карта, Онлайн
     /// </summary>

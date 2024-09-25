@@ -1,0 +1,81 @@
+﻿@page "/adminka"
+@using GD.Shared.Request
+@using GD.Shared.Response
+
+<h1>Adminka</h1>
+
+<MudGrid>
+    <MudItem xs="12" sm="7">
+        <MudPaper Class="pa-4">
+            <MudForm @bind-IsValid="@success" @bind-Errors="@errors">
+                <MudTextField T="string"
+                              InputType="InputType.Text"
+                              Label="Name"
+                              Required="true"
+                              RequiredError="Name is required!"
+                              @bind-Text=@Name/>
+
+                <MudTextField T="string" Label="Description"
+                              InputType="InputType.Text"
+                              Required="true"
+                              RequiredError="Description is required!"
+                              @bind-Text=@Description/>
+                
+                <MudTextField T="string" Label="Description"
+                              InputType="InputType.Text"
+                              Required="true"
+                              RequiredError="Description is required!"
+                              @bind-Text=@Description/>
+                
+                <MudTextField T="string" Label="Description"
+                              InputType="InputType.Text"
+                              Required="true"
+                              RequiredError="Description is required!"
+                              @bind-Text=@Description/>
+                
+                <MudTextField T="string" Label="Description"
+                              InputType="InputType.Text"
+                              Required="true"
+                              RequiredError="Description is required!"
+                              @bind-Text=@Description/>
+                
+                <MudTextField T="string" Label="Description"
+                              InputType="InputType.Text"
+                              Required="true"
+                              RequiredError="Description is required!"
+                              @bind-Text=@Description/>
+
+                <div class="d-flex align-center justify-space-between">
+                    <MudButton Variant="Variant.Filled" OnClick="OnLogin" Color="Color.Primary" Disabled="@(!success)" Class="ml-auto">Register</MudButton>
+                </div>
+            </MudForm>
+        </MudPaper>
+
+    </MudItem>
+</MudGrid>
+
+
+@code {
+    string Name = "";
+    string Description = "";
+    string ImageValue = "";
+    double Price = 0;
+    string Tags = "";
+    double Amount = 0;
+    
+    
+    bool success;
+    string[] errors = { };
+
+    async Task OnLogin()
+    {
+        // var dto = new SignInRequest() { Email = Email, Pwd = Pwd };
+        // dto.Email = Uri.EscapeDataString(dto.Email);
+        // var res = await _http.Get<SignInResponse>($"api/Auth/SignIn?Email={dto.Email}&Pwd={dto.Pwd}");
+        // if (res.IsSuccess)
+        // {
+        //     await _ls.SetItemAsStringAsync("JWT", res.Data!.Jwt);
+        //     _nm.NavigateTo("/acc");
+        // }
+    }
+}

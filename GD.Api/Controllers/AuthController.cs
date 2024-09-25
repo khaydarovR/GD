@@ -35,8 +35,7 @@ namespace GD.Api.Controllers
             var isValidPwd = await um.CheckPasswordAsync(u, dto.Pwd);
             if (isValidPwd==false)
             {
-                var notValid = new Res<bool>("Не правильный пароль");
-                return BadRequest(notValid.ErrorList);
+                return BadRequest("Не правильный пароль");
             }
 
             var role = (await um.GetRolesAsync(u)).FirstOrDefault();

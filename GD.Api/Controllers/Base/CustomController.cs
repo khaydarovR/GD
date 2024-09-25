@@ -14,5 +14,11 @@ namespace GD.Api.Controllers.Base
             }
         }
         internal string? CurrentIp => HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
+
+        public override BadRequestObjectResult BadRequest(object? error)
+        {
+            var notValid = new Res<bool>(error?.ToString() ?? "");
+            return base.BadRequest(notValid.ErrorList);
+        }
     }
 }

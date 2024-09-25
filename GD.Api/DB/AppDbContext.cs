@@ -16,6 +16,7 @@ namespace GD.Api.DB
 
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options): base(options)

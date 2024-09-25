@@ -3,7 +3,6 @@ using GD.Api.DB;
 using GD.Api.DB.Models;
 using GD.Shared.Common;
 using GD.Shared.Request;
-using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -24,29 +23,112 @@ public class OrderController : CustomController
         _userManager = userManager;
     }
 
-    [HttpPost]
+    [HttpPost("open")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "client")]
-    public async Task<IActionResult> CreateOrder([FromBody] OrderRequest orderRequest)
+    public async Task<IActionResult> OpenOrder()
     {
-        var product = await _appDbContext.Products.FirstOrDefaultAsync(p => p.Id == orderRequest.ProductId);
-        if (product is null) return BadRequest("товар не найден");
+        var order = new Order
+        {
+            Status = "Selecting",
+            ClientId = ContextUserId
+        };
+        
+        await _appDbContext.Orders.AddAsync(order);
+        await _appDbContext.SaveChangesAsync();
+        return Ok(order);
+    }
+
+    [HttpGet("{id:guid}")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "client")]
+    public async Task<IActionResult> GetOrder([FromRoute] Guid id)
+    {
+        var order = await _appDbContext.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(o => o.Product)
+            .FirstOrDefaultAsync(o => o.Id == id);
+        
+        if (order is null) return BadRequest("заказ не найден");
+        if (order.ClientId != ContextUserId) return BadRequest("заказ не ваш");
+
+        var result = new
+        {
+            order.Id,
+            order.CreatedAt,
+            order.StartDeliveryAt,
+            order.OrderClosedAt,
+            order.ToAddress,
+            order.TotalPrice,
+            order.Status,
+            order.PayMethod,
+            Products = order.OrderItems.Select(oi => new
+            {
+                oi.Product.Id,
+                oi.Product.Name,
+                oi.Product.Description,
+                oi.Product.Price,
+                oi.Product.Tags,
+                oi.Amount
+            })
+        };
+
+        return Ok(result);    
+    }
+
+    
+    [HttpPost("add")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "client")]
+    public async Task<IActionResult> AddToOrder([FromBody] OrderItemRequest request)
+    {
+        if (!await _appDbContext.Products.AnyAsync(p => p.Id == request.ProductId))
+        {
+            return BadRequest("товар не найден");
+        }
+        
+        if (!await _appDbContext.Orders.AnyAsync(p => p.Id == request.OrderId))
+        {
+            return BadRequest("заказ не найден");
+        }
+
+        var orderItem = new OrderItem
+        {
+            Amount = request.Amount,
+            OrderId = request.OrderId,
+            ProductId = request.ProductId
+        };
+        
+        await _appDbContext.OrderItems.AddAsync(orderItem);
+        await _appDbContext.SaveChangesAsync();
+
+        return Ok();
+    }
+    
+    [HttpPost("complete")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "client")]
+    public async Task<IActionResult> CompleteOrder([FromBody] OrderRequest orderRequest)
+    {
+        var order = await _appDbContext.Orders.FirstOrDefaultAsync(o => o.Id == orderRequest.OrderId);
+
+        if (order is null)
+        {
+            return BadRequest("заказ не найден");
+        }
+        
+        var orderItems = _appDbContext.OrderItems.Include(o => o.Product).Where(o => o.OrderId == orderRequest.OrderId).ToList();
+        var total = orderItems.Sum(o => o.Amount * o.Product.Price);
         
         if (orderRequest.PayMethod.ToLower() == "online")
         {
             var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == ContextUserId);
-            if (user!.Balance < orderRequest.Amount * product.Price) return BadRequest("недостаточно средств");
+            if (user!.Balance < total) return BadRequest("недостаточно средств");
         }
         
-        var order = orderRequest.Adapt<Order>();
         order.CreatedAt = DateTime.UtcNow;
         order.Status = "Waiting";
-        order.TotalPrice = product.Price * orderRequest.Amount;
-        order.ClientId = ContextUserId;
-        
+        order.TotalPrice = total;
         
         await _appDbContext.Orders.AddAsync(order);
         await _appDbContext.SaveChangesAsync();
-
+    
         return Ok(order);
     }
     

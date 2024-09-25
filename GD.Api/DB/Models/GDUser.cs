@@ -18,25 +18,33 @@ namespace GD.Api.DB.Models
         public Guid Id { get; set; }
         public double TargetPosLati { get; set; }
         public double TargetPosLong { get; set; }
-        public string ToAddress { get; set; }
+        public string? ToAddress { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? StartDeliveryAt { get; set; }
         public DateTime? OrderClosedAt { get; set; }
         public Guid ClientId { get; set; }
         [JsonIgnore]
         public GDUser Client { get; set; }
-        
-        [JsonIgnore]
-        public Product Product { get; set; }
-        public Guid ProductId { get; set; }
-        public int Amount { get; set; }
-        
         /// <summary>
         /// Наличка, Карта, Онлайн
         /// </summary>
-        public string PayMethod { get; set; }
+        public string? PayMethod { get; set; }
         public double TotalPrice { get; set; }
-        public string Status { get; set; }
+        public string? Status { get; set; }
         public Guid? CourierId { get; set; }
+
+        public ICollection<OrderItem> OrderItems { get; set; }
+    }
+
+    public class OrderItem
+    {
+        public Guid Id { get; set; }
+        public Guid ProductId { get; set; }
+        public Guid OrderId { get; set; }
+        [JsonIgnore]
+        public Product Product { get; set; }
+        [JsonIgnore]
+        public Order Order { get; set; }
+        public int Amount { get; set; }
     }
 }
