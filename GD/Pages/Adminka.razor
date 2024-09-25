@@ -1,64 +1,74 @@
 ﻿@page "/adminka"
 @using System.Net.Http.Headers
+@using GD.Shared.Common
 @using GD.Shared.Request
 @using GD.Shared.Response
 
 <h1>Adminka</h1>
 
-<MudGrid>
-    <MudItem xs="12" sm="7">
-        <MudPaper Class="pa-4">
-            <MudForm>
-                <MudTextField T="string"
-                              InputType="InputType.Text"
-                              Label="Name"
-                              Required="true"
-                              RequiredError="Name is required!"
-                              @bind-Text=@_request.Name/>
+@if (isAdmin)
+{
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <h3>Create Product</h3>
+            <MudPaper Class="pa-4">
+                <MudForm>
+                    <MudTextField T="string"
+                                  InputType="InputType.Text"
+                                  Label="Name"
+                                  Required="true"
+                                  RequiredError="Name is required!"
+                                  @bind-Text=@_request.Name/>
 
-                <MudTextField T="string" Label="Description"
-                              InputType="InputType.Text"
-                              Required="true"
-                              RequiredError="Description is required!"
-                              @bind-Text=@_request.Description/>
-                
-                <MudTextField T="string" Label="ImageValue"
-                              InputType="InputType.Text"
-                              Required="true"
-                              RequiredError="Description is required!"
-                              @bind-Text=@_request.ImageValue/>
-                
-                <MudTextField T="double" Label="Price"
-                              InputType="InputType.Number"
-                              Required="true"   
-                              RequiredError="Description is required!"
-                              @bind-Value=@_request.Price/>
-                
-                <MudTextField T="string" Label="Tags"
-                              InputType="InputType.Text"
-                              Required="true"
-                              RequiredError="Description is required!"
-                              @bind-Value=@_request.Tags/>
-                
-                <MudTextField T="double" Label="Amount"
-                              InputType="InputType.Number"
-                              Required="true"
-                              RequiredError="Description is required!"
-                              @bind-Value=@_request.Amount/>
+                    <MudTextField T="string" Label="Description"
+                                  InputType="InputType.Text"
+                                  Required="true"
+                                  RequiredError="Description is required!"
+                                  @bind-Text=@_request.Description/>
 
-                <div class="d-flex align-center justify-space-between">
-                    <MudButton Variant="Variant.Filled" OnClick="OnLogin" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                </div>
-            </MudForm>
-        </MudPaper>
+                    <MudTextField T="string" Label="ImageValue"
+                                  InputType="InputType.Text"
+                                  Required="true"
+                                  RequiredError="Description is required!"
+                                  @bind-Text=@_request.ImageValue/>
 
-    </MudItem>
-</MudGrid>
+                    <MudTextField T="double" Label="Price"
+                                  InputType="InputType.Number"
+                                  Required="true"
+                                  RequiredError="Description is required!"
+                                  @bind-Value=@_request.Price/>
+
+                    <MudTextField T="string" Label="Tags"
+                                  InputType="InputType.Text"
+                                  Required="true"
+                                  RequiredError="Description is required!"
+                                  @bind-Value=@_request.Tags/>
+
+                    <MudTextField T="double" Label="Amount"
+                                  InputType="InputType.Number"
+                                  Required="true"
+                                  RequiredError="Description is required!"
+                                  @bind-Value=@_request.Amount/>
+
+                    <div class="d-flex align-center justify-space-between">
+                        <MudButton Variant="Variant.Filled" OnClick="OnLogin" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                    </div>
+                </MudForm>
+            </MudPaper>
+
+        </MudItem>
+    </MudGrid>
+}
+else
+{
+    <h1>You are not admin</h1>
+}
 
 
 @code {
     readonly Request _request = new();
-    
+    bool isAdmin = false;
+
     async Task OnLogin()
     {
         using var client = _httpClientFactory.CreateClient("api");
@@ -66,6 +76,15 @@
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
         request.Content = JsonContent.Create(_request);
         var response = await client.SendAsync(request);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await _auth.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isAdmin = user.IsInRole(GDUserRoles.Admin);
+        _auth.AuthenticationStateChanged += _ => StateHasChanged();
+        StateHasChanged();
     }
 
     class Request
@@ -77,4 +96,5 @@
         public double Amount { get; set; }
         public double Price { get; set; }
     }
+
 }
