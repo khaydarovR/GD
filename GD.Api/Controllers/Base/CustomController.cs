@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using GD.Shared.Common;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
 namespace GD.Api.Controllers.Base
@@ -9,7 +10,7 @@ namespace GD.Api.Controllers.Base
         {
             get
             {
-                return Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                return Guid.Parse(User.FindFirst(GDUserClaimTypes.Id)!.Value);
             }
         }
         internal string? CurrentIp => HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
