@@ -54,6 +54,7 @@
         if (res.IsSuccess)
         {
             await _ls.SetItemAsStringAsync("JWT", res.Data!.Jwt);
+            await _ls.RemoveItemAsync("order");
             _nm.NavigateTo("/acc");
         }
 

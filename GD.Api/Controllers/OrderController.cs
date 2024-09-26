@@ -64,6 +64,7 @@ public class OrderController : CustomController
             {
                 oi.Product.Id,
                 oi.Product.Name,
+                oi.Product.ImageValue,
                 oi.Product.Description,
                 oi.Product.Price,
                 oi.Product.Tags,
@@ -74,6 +75,36 @@ public class OrderController : CustomController
         return Ok(result);    
     }
 
+    [HttpGet("waiting")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "courier")]
+    public IActionResult GetWaitingOrders()
+    {
+        return Ok(_appDbContext.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(o => o.Product)
+            .Where(o => o.Status == "Waiting")
+            .Select(order => new
+            {
+                order.Id,
+                order.CreatedAt,
+                order.StartDeliveryAt,
+                order.OrderClosedAt,
+                order.ToAddress,
+                order.TotalPrice,
+                order.Status,
+                order.PayMethod,
+                Products = order.OrderItems.Select(oi => new
+                {
+                    oi.Product.Id,
+                    oi.Product.Name,
+                    oi.Product.Description,
+                    oi.Product.ImageValue,
+                    oi.Product.Price,
+                    oi.Product.Tags,
+                    oi.Amount
+                })
+            }));
+    }
     
     [HttpPost("add")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "client")]
@@ -121,12 +152,50 @@ public class OrderController : CustomController
             var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == ContextUserId);
             if (user!.Balance < total) return BadRequest("недостаточно средств");
         }
+
+        order.ToAddress = orderRequest.ToAddress;
+        order.TargetPosLong = orderRequest.TargetPosLong;
+        order.TargetPosLati = orderRequest.TargetPosLati;
+        order.CreatedAt = DateTime.UtcNow;
+        order.Status = "Waiting";
+        order.TotalPrice = total;
+        order.PayMethod = orderRequest.PayMethod;
         
+        _appDbContext.Orders.Update(order);
+        await _appDbContext.SaveChangesAsync();
+    
+        return Ok(order);
+    }
+    
+    [HttpPost("completewithdefault")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "client")]
+    public async Task<IActionResult> CompleteOrderWithDefault([FromBody] OrderRequestWithDefault orderRequest)
+    {
+        var order = await _appDbContext.Orders.Include(o => o.Client).FirstOrDefaultAsync(o => o.Id == orderRequest.OrderId);
+
+        if (order is null)
+        {
+            return BadRequest("заказ не найден");
+        }
+        
+        var orderItems = _appDbContext.OrderItems.Include(o => o.Product).Where(o => o.OrderId == orderRequest.OrderId).ToList();
+        var total = orderItems.Sum(o => o.Amount * o.Product.Price);
+        
+        if (orderRequest.PayMethod.ToLower() == "online")
+        {
+            var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == ContextUserId);
+            if (user!.Balance < total) return BadRequest("недостаточно средств");
+        }
+        
+        order.ToAddress = order.Client.Address;
+        order.TargetPosLong = order.Client.PosLong;
+        order.TargetPosLati = order.Client.PosLati;
+        order.PayMethod = orderRequest.PayMethod;
         order.CreatedAt = DateTime.UtcNow;
         order.Status = "Waiting";
         order.TotalPrice = total;
         
-        await _appDbContext.Orders.AddAsync(order);
+        _appDbContext.Orders.Update(order);
         await _appDbContext.SaveChangesAsync();
     
         return Ok(order);

@@ -1,5 +1,6 @@
 ﻿
 @page "/acc"
+@using System.Net.Http.Headers
 @using System.Security.Claims
 
 
@@ -15,6 +16,49 @@
             </MudListItem>
         }
     </MudList>
+    <br>
+    <br>
+    <br>
+    <h3>Change Location</h3>
+    <MudPaper Class="pa-4">
+        <MudForm>
+            <MudTextField T="string"
+                          InputType="InputType.Text"
+                          Label="Address"
+                          Required="true"
+                          RequiredError="Address is required!"
+                          @bind-Text=@location.Address/>
+
+            <MudTextField T="double" Label="PosLati"
+                          InputType="InputType.Text"
+                          Required="true"
+                          RequiredError="PosLati is required!"
+                          @bind-Value=@location.PosLati/>
+
+            <MudTextField T="double" Label="PosLong"
+                          InputType="InputType.Text"
+                          Required="true"
+                          RequiredError="PosLong is required!"
+                          @bind-Value=@location.PosLong/>
+            <div class="d-flex align-center justify-space-between">
+                <MudButton Variant="Variant.Filled" OnClick="ChangeLocation" Color="Color.Primary" Class="ml-auto">Change</MudButton>
+            </div>
+        </MudForm>
+    </MudPaper>
+    <h3>Add to balance</h3>
+    <MudPaper Class="pa-4">
+        <MudForm>
+            <MudTextField T="int"
+                          InputType="InputType.Number"
+                          Label="Address"
+                          Required="true"
+                          RequiredError="Amount is required!"
+                          @bind-Value=@amount/>
+            <div class="d-flex align-center justify-space-between">
+                <MudButton Variant="Variant.Filled" OnClick="AddToBalance" Color="Color.Primary" Class="ml-auto">Change</MudButton>
+            </div>
+        </MudForm>
+    </MudPaper>
 </MudPaper>
 
 
@@ -22,8 +66,9 @@
     private string? authMessage;
     private string? surname;
     private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
-
-
+    Location location = new();
+    int amount = 0;
+    
     protected override async Task OnInitializedAsync()
     {
         await GetClaimsPrincipalData();
@@ -45,4 +90,30 @@
             authMessage = "The user is NOT authenticated.";
         }
     }
+
+    private async Task ChangeLocation()
+    {
+        var client = _httpClientFactory.CreateClient("api");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/Client/location");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
+        request.Content = JsonContent.Create(location);
+        await client.SendAsync(request);
+    }
+
+    class Location
+    {
+        public string Address { get; set; }
+        public double PosLati { get; set; }
+        public double PosLong { get; set; }
+    }
+
+    private async Task AddToBalance()
+    {
+        var client = _httpClientFactory.CreateClient("api");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/Client/balance/add");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
+        request.Content = JsonContent.Create(new { amount });
+        await client.SendAsync(request);
+    }
+
 }

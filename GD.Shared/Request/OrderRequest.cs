@@ -11,3 +11,12 @@ public class OrderRequest
     /// </summary>
     public string PayMethod { get; set; }
 }
+
+public class OrderRequestWithDefault
+{
+    public Guid OrderId { get; set; }
+    /// <summary>
+    /// Наличка, Карта, Онлайн
+    /// </summary>
+    public string PayMethod { get; set; }
+}

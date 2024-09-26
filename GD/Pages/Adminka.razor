@@ -56,6 +56,21 @@
                 </MudForm>
             </MudPaper>
 
+            <h3>Create Courier</h3>
+            <MudPaper Class="pa-4">
+                <MudForm>
+                    <MudTextField T="Guid"
+                                  InputType="InputType.Text"
+                                  Label="Id"
+                                  Required="true"
+                                  RequiredError="Id is required!"
+                                  @bind-Value=@clientId/>
+                    <div class="d-flex align-center justify-space-between">
+                        <MudButton Variant="Variant.Filled" OnClick="MakeCourier" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                    </div>
+                </MudForm>
+            </MudPaper>
+
         </MudItem>
     </MudGrid>
 }
@@ -68,6 +83,7 @@ else
 @code {
     readonly Request _request = new();
     bool isAdmin = false;
+    Guid clientId = Guid.Empty;
 
     async Task OnLogin()
     {
@@ -97,4 +113,12 @@ else
         public double Price { get; set; }
     }
 
+    private async Task MakeCourier()
+    {
+        using var client = _httpClientFactory.CreateClient("api");
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/Courier/new");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
+        request.Content = JsonContent.Create(new { clientId });
+        await client.SendAsync(request);
+    }
 }

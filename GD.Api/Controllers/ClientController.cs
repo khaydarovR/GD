@@ -33,7 +33,7 @@ public class ClientController : CustomController
         return Ok();
     }
 
-    [HttpPost("balance/location")]
+    [HttpPost("location")]
     public async Task<IActionResult> SetLocation(LocationRequest request)
     {
         var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == ContextUserId);
