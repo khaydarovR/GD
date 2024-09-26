@@ -5,24 +5,27 @@
 
 @if (isCourier)
 {
-    @foreach (var product in _response!.Products)
+    @foreach (var response in _responses)
     {
-        <MudCard>
-            <MudCardContent>
-                <MudText>@product.ImageValue</MudText> @*todo*@
-                <MudText>@product.Name</MudText>
-                <MudText Typo="Typo.body2">@product.Description</MudText>
-                <MudText Typo="Typo.body2">@product.Tags</MudText>
-                <MudText Typo="Typo.body2">@product.Price$</MudText>
-            </MudCardContent>
-            <MudCardActions>
-                <MudButton OnClick="() => TakeOrder(product.Id)"
-                           Variant="Variant.Text"
-                           Color="Color.Primary">
-                    Take order
-                </MudButton>
-            </MudCardActions>
-        </MudCard>
+        @foreach (var product in response!.Products)
+        {
+            <MudCard>
+                <MudCardContent>
+                    <MudText>@product.ImageValue</MudText> @*todo*@
+                    <MudText>@product.Name</MudText>
+                    <MudText Typo="Typo.body2">@product.Description</MudText>
+                    <MudText Typo="Typo.body2">@product.Tags</MudText>
+                    <MudText Typo="Typo.body2">@product.Price$</MudText>
+                </MudCardContent>
+            </MudCard>
+        }
+        <MudCardActions>
+            <MudButton OnClick="() => TakeOrder(response.Id)"
+                       Variant="Variant.Text"
+                       Color="Color.Primary">
+                Take order
+            </MudButton>
+        </MudCardActions>
     }
 }
 else
@@ -32,14 +35,14 @@ else
 
 @code {
     bool isCourier = false;
-    Response _response = new();
+    List<Response> _responses = new();
 
     private async Task TakeOrder(Guid id)
     {
         using var client = _httpClientFactory.CreateClient("api");
-        var request = new HttpRequestMessage(HttpMethod.Post, "api/order/take");
+        var request = new HttpRequestMessage(HttpMethod.Post, $"api/order/take?id={id}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
-        await client.SendAsync(request);
+        var response = await client.SendAsync(request);
     }
     
     protected override async Task OnInitializedAsync()
@@ -55,7 +58,7 @@ else
             var request = new HttpRequestMessage(HttpMethod.Get, "api/order/waiting");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
             var response = await client.SendAsync(request);
-            _response = await response.Content.ReadFromJsonAsync<Response>() ?? new();
+            _responses = await response.Content.ReadFromJsonAsync<List<Response>>() ?? new();
         }
 
         StateHasChanged();
@@ -74,8 +77,8 @@ else
 
     class Response
     {
-        public string Status { get; set; }
-        public List<ProductResponse> Products { get; set; }
+        public Guid Id { get; set; }
+        public string Status { get; set; } = "";
+        public List<ProductResponse> Products { get; set; } = [];
     }
-
 }

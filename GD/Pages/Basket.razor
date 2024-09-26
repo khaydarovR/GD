@@ -5,10 +5,11 @@
 
 @if (isClient)
 {
-    <h3>Status: @_response!.Status</h3>
-    
-    @if (isOrderCreated)
+    @foreach (var response in _responses)
     {
+        <h3>Status: @response!.Status</h3>
+
+
         <MudPaper Class="pa-4">
             <MudForm>
                 <MudTextField T="string"
@@ -18,26 +19,29 @@
                               RequiredError="payMethod is required!"
                               @bind-Text=@payMethod/>
                 <div class="d-flex align-center justify-space-between">
-                    <MudButton Variant="Variant.Filled" OnClick="CompleteOrder" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                    <MudButton Variant="Variant.Filled" OnClick="() => CompleteOrder(response.Id)" Color="Color.Primary" Class="ml-auto">Register</MudButton>
                 </div>
             </MudForm>
         </MudPaper>
-    }
-
-    @foreach(var product in _response!.Products)
-    {
         
-        <MudCard>
-            <MudCardContent>
-                <MudText>@product.ImageValue</MudText> @*todo*@
-                <MudText>@product.Name</MudText>
-                <MudText Typo="Typo.body2">@product.Description</MudText>
-                <MudText Typo="Typo.body2">@product.Tags</MudText>
-                <MudText Typo="Typo.body2">@product.Price$</MudText>
-            </MudCardContent>
-        </MudCard>
+
+
+        @foreach (var product in response!.Products)
+        {
+
+            <MudCard>
+                <MudCardContent>
+                    <MudText>@product.ImageValue</MudText> @*todo*@
+                    <MudText>@product.Name</MudText>
+                    <MudText Typo="Typo.body2">@product.Description</MudText>
+                    <MudText Typo="Typo.body2">@product.Tags</MudText>
+                    <MudText Typo="Typo.body2">@product.Price$</MudText>
+                </MudCardContent>
+            </MudCard>
+        }
     }
 }
+
 else
 {
     <h2>Your are not customer</h2>
@@ -45,8 +49,7 @@ else
 
 @code {
     bool isClient = false;
-    bool isOrderCreated = false;
-    Response _response = new();
+    List<Response> _responses = new();
     string payMethod = "online";
 
     protected override async Task OnInitializedAsync()
@@ -58,18 +61,17 @@ else
 
         if (isClient)
         {
-            isOrderCreated = await _ls.ContainKeyAsync("order");
-            if (isOrderCreated)
-            {
-                var orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
-                var client = _httpClientFactory.CreateClient("api");
-                var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Order/{Uri.EscapeDataString(orderId.ToString())}");
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
-                var response = await client.SendAsync(request);
-                _response = await response.Content.ReadFromJsonAsync<Response>() ?? new();
+            var orderId = Guid.Empty;
+            if(await _ls.ContainKeyAsync("order")) 
+                orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
+            
+            var client = _httpClientFactory.CreateClient("api");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Client/basket");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
+            var response = await client.SendAsync(request);
+            _responses = await response.Content.ReadFromJsonAsync<List<Response>>() ?? new();
 
-                if (_response!.Status == "Delivered") await _ls.RemoveItemAsync("order");
-            }
+            if (_responses.FirstOrDefault(r => r.Id == orderId)?.Status == "Delivered") await _ls.RemoveItemAsync("order");
         }
         
         StateHasChanged();
@@ -87,13 +89,13 @@ else
 
     class Response
     {
+        public Guid Id { get; set; }
         public string Status { get; set; } = "";
         public List<ProductResponse> Products { get; set; } = [];
     }
 
-    private async Task CompleteOrder()
+    private async Task CompleteOrder(Guid orderId)
     {
-        var orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
         var client = _httpClientFactory.CreateClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, $"/api/Order/completewithdefault");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));

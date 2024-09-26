@@ -20,13 +20,13 @@ public class ClientController : CustomController
     {
         _appDbContext = appDbContext;
     }
-    
+
     [HttpPost("balance/add")]
     public async Task<IActionResult> AddToBalance(AddToBalanceRequest request)
     {
         var user = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == ContextUserId);
         if (user is null) return BadRequest("пользователь не найден");
-        
+
         user.Balance += request.Amount;
         _appDbContext.Update(user);
         await _appDbContext.SaveChangesAsync();
@@ -47,11 +47,61 @@ public class ClientController : CustomController
         await _appDbContext.SaveChangesAsync();
         return Ok(user);
     }
-    
+
     [HttpGet("basket")]
     public async Task<IActionResult> GetBasket()
     {
-        return Ok(_appDbContext.Orders.Where(o => o.ClientId == ContextUserId));
-    }
+        var orders = _appDbContext.Orders.Include(o => o.OrderItems)
+            .ThenInclude(oi => oi.Product)
+            .Where(o => o.ClientId == ContextUserId)
+            .Select(order => new
+            {
+                order.Id,
+                order.CreatedAt,
+                order.StartDeliveryAt,
+                order.OrderClosedAt,
+                order.ToAddress,
+                order.TotalPrice,
+                order.Status,
+                order.PayMethod,
+                Products = order.OrderItems.Select(oi => new
+                {
+                    oi.Product.Id,
+                    oi.Product.Name,
+                    oi.Product.Description,
+                    oi.Product.ImageValue,
+                    oi.Product.Price,
+                    oi.Product.Tags,
+                    oi.Amount
+                })
+            });
 
+        return Ok(orders);
+
+        /*return Ok(_appDbContext.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(o => o.Product)
+            .Where(o => o.Status == "Waiting")
+            .Select(order => new
+            {
+                order.Id,
+                order.CreatedAt,
+                order.StartDeliveryAt,
+                order.OrderClosedAt,
+                order.ToAddress,
+                order.TotalPrice,
+                order.Status,
+                order.PayMethod,
+                Products = order.OrderItems.Select(oi => new
+                {
+                    oi.Product.Id,
+                    oi.Product.Name,
+                    oi.Product.Description,
+                    oi.Product.ImageValue,
+                    oi.Product.Price,
+                    oi.Product.Tags,
+                    oi.Amount
+                })
+            }));*/
+    }
 }
