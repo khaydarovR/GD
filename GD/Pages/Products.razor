@@ -1,0 +1,90 @@
+﻿@page "/Products"
+@using System.Net.Http.Headers
+<h3>Products</h3>
+
+<div>
+    @foreach(var product in _products)
+    {
+        <MudCard>
+            <MudCardContent>
+                <MudText>@product.ImageValue</MudText> @*todo*@
+                <MudText>@product.Name</MudText>
+                <MudText Typo="Typo.body2">@product.Description</MudText>
+                <MudText Typo="Typo.body2">@product.Tags</MudText>
+                <MudText Typo="Typo.body2">@product.Price$</MudText>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton OnClick="() => AddToOrder(product.Id)"
+                           Variant="Variant.Text"
+                           Color="Color.Primary">
+                    Add to order
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    }
+</div>
+
+@code {
+    List<Request> _products = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = _httpClientFactory.CreateClient("api");
+        var response = await client.GetAsync("api/product");
+        _products = await response.Content.ReadFromJsonAsync<List<Request>>() ?? [];
+    }
+
+    private async Task AddToOrder(Guid id)
+    {
+        if (!await _ls.ContainKeyAsync("JWT"))
+        {
+            _nm.NavigateTo("/login");
+        }
+
+        Guid orderId;
+        var jwt = await _ls.GetItemAsStringAsync("JWT");
+        
+        var client = _httpClientFactory.CreateClient("api");
+        
+        if (await _ls.ContainKeyAsync("order"))
+        {
+            orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
+        }
+        else
+        {
+            var openRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Order/open");
+            openRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+            var openResponse = await client.SendAsync(openRequest);
+            var data = await openResponse.Content.ReadFromJsonAsync<Response>();
+            orderId = data!.Id;
+            await _ls.SetItemAsStringAsync("order", orderId.ToString());
+        }
+        
+        var addRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Order/add");
+        addRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+        addRequest.Content = JsonContent.Create(new
+        {
+            OrderId = orderId,
+            ProductId = id,
+            Amount = 1
+        });
+        
+        await client.SendAsync(addRequest);
+    }
+    
+    class Request
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string ImageValue { get; set; }
+        public double Price { get; set; }
+        public string Tags { get; set; }
+        public int Amount { get; set; }    
+    }
+
+    class Response
+    {
+        public Guid Id { get; set; }
+    }
+}

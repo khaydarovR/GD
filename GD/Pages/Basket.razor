@@ -1,0 +1,67 @@
+﻿@page "/Basket"
+@using System.Net.Http.Headers
+@using GD.Shared.Common
+<h3>Basket</h3>
+
+@if (isClient)
+{
+    <h3>Status: @_response!.Status</h3>
+    @foreach(var product in _response!.Products)
+    {
+        <MudCard>
+            <MudCardContent>
+                <MudText>@product.ImageValue</MudText> @*todo*@
+                <MudText>@product.Name</MudText>
+                <MudText Typo="Typo.body2">@product.Description</MudText>
+                <MudText Typo="Typo.body2">@product.Tags</MudText>
+                <MudText Typo="Typo.body2">@product.Price$</MudText>
+            </MudCardContent>
+        </MudCard>
+    }
+}
+
+@code {
+    bool isClient = false;
+    bool isOrderCreated = false;
+    Response? _response = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await _auth.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isClient = user.IsInRole(GDUserRoles.Client);
+        _auth.AuthenticationStateChanged += _ => StateHasChanged();
+
+        if (isClient)
+        {
+            isOrderCreated = await _ls.ContainKeyAsync("order");
+            if (isOrderCreated)
+            {
+                var orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
+                var client = _httpClientFactory.CreateClient("api");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Order/{Uri.EscapeDataString(orderId.ToString())}");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
+                var response = await client.SendAsync(request);
+                _response = await response.Content.ReadFromJsonAsync<Response>() ?? default;
+            }
+        }
+        
+        StateHasChanged();
+    }
+    
+    class ProductResponse
+    {
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Tags { get; set; }
+        public string ImageValue { get; set; }
+        public double Amount { get; set; }
+        public double Price { get; set; }
+    }
+
+    class Response
+    {
+        public string Status { get; set; }
+        public List<ProductResponse> Products { get; set; }
+    }
+}
