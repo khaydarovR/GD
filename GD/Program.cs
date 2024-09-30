@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using GD;
 using MudBlazor.Services;
 using Blazored.LocalStorage;
+using Darnton.Blazor.DeviceInterop.Geolocation;
 using GD.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 
@@ -26,6 +27,8 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
 
 builder.Services.AddScoped<HttpService>();
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<GeolocationService>();
 
 
 await builder.Build().RunAsync();

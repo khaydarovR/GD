@@ -143,6 +143,11 @@ public class OrderController : CustomController
         {
             return BadRequest("заказ не найден");
         }
+
+        if (order.Status != "Selecting")
+        {
+            return BadRequest("заказ уже обрабатывается");
+        }
         
         var orderItems = _appDbContext.OrderItems.Include(o => o.Product).Where(o => o.OrderId == orderRequest.OrderId).ToList();
         var total = orderItems.Sum(o => o.Amount * o.Product.Price);
@@ -249,7 +254,7 @@ public class OrderController : CustomController
         order.OrderClosedAt = DateTime.UtcNow;
         order.Status = "Delivered";
 
-        if (order.PayMethod.ToLower() == "online")
+        if (order.PayMethod!.ToLower() == "online")
         {
             var client = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == order.ClientId);
             client!.Balance -= order.TotalPrice;

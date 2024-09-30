@@ -8,6 +8,10 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GD.Services
 {
+    public struct Unit
+    {
+    }
+
     public class HttpService
     {
         private readonly HttpClient httpClient;
@@ -22,7 +26,7 @@ namespace GD.Services
             this.snack = snackbar;
         }
 
-        public async Task<Res<TResponse>> Post<TData, TResponse>(string url, TData data)
+        public async Task<Res<TResponse>> PostAsync<TData, TResponse>(string url, TData data)
         {
             HttpResponseMessage httpResponseMessage;
             httpResponseMessage = await httpClient.PostAsJsonAsync(url, data);
@@ -44,7 +48,7 @@ namespace GD.Services
         }
 
 
-        public async Task<Res<TResponse>> Get<TResponse>(string url)
+        public async Task<Res<TResponse>> GetAsync<TResponse>(string url)
         {
             HttpResponseMessage httpResponseMessage;
             httpResponseMessage = await httpClient.GetAsync(url);
@@ -91,18 +95,21 @@ namespace GD.Services
 
         private async Task<Res<TResponse>> HandleSuccessStatusCode<TResponse>(string url, HttpResponseMessage httpResponseMessage)
         {
-            TResponse? successRusult;
+            TResponse? successRusult = default(TResponse);
             try
             {
                 successRusult = await httpResponseMessage.Content.ReadFromJsonAsync<TResponse>();
             }
             catch (Exception ex)
             {
-                var json = await httpResponseMessage.Content.ReadAsStringAsync();
-                var errTxt = $"Ошибка десериализации :\n{json}\n=>\n{typeof(TResponse).FullName}\nURL: {url}";
-                logger.LogError(errTxt);
-                snack.Add(errTxt, Severity.Error);
-                return new Res<TResponse>(errorText: $"Не удалось преоброзвать полученный JSON в " + typeof(TResponse).Name + $" | URL: {url}");
+                if (typeof(TResponse) != typeof(Unit))
+                {
+                    var json = await httpResponseMessage.Content.ReadAsStringAsync();
+                    var errTxt = $"Ошибка десериализации :\n{json}\n=>\n{typeof(TResponse).FullName}\nURL: {url}";
+                    logger.LogError(errTxt);
+                    snack.Add(errTxt, Severity.Error);
+                    return new Res<TResponse>(errorText: $"Не удалось преоброзвать полученный JSON в " + typeof(TResponse).Name + $" | URL: {url}");
+                }
             }
 
             return new Res<TResponse>(data: successRusult!);

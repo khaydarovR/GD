@@ -7,41 +7,40 @@
 {
     @foreach (var response in _responses)
     {
-        <h3>Status: @response!.Status</h3>
-
-
-        <MudPaper Class="pa-4">
-            <MudForm>
-                <MudTextField T="string"
-                              InputType="InputType.Text"
-                              Label="Name"
-                              Required="true"
-                              RequiredError="payMethod is required!"
-                              @bind-Text=@payMethod/>
-                <div class="d-flex align-center justify-space-between">
-                    <MudButton Variant="Variant.Filled" OnClick="() => CompleteOrder(response.Id)" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                </div>
-            </MudForm>
-        </MudPaper>
-        
-
-
-        @foreach (var product in response!.Products)
+        if(response.Status != "Delivered")
         {
+            <h3>Status: @response!.Status</h3>
+            
+            <MudPaper Class="pa-4">
+                <MudForm>
+                    <MudTextField T="string"
+                                  InputType="InputType.Text"
+                                  Label="Name"
+                                  Required="true"
+                                  RequiredError="payMethod is required!"
+                                  @bind-Text=@payMethod/>
+                    <div class="d-flex align-center justify-space-between">
+                        <MudButton Variant="Variant.Filled" OnClick="() => CompleteOrder(response.Id)" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                    </div>
+                </MudForm>
+            </MudPaper>
+            
+            @foreach (var product in response!.Products)
+            {
 
-            <MudCard>
-                <MudCardContent>
-                    <MudText>@product.ImageValue</MudText> @*todo*@
-                    <MudText>@product.Name</MudText>
-                    <MudText Typo="Typo.body2">@product.Description</MudText>
-                    <MudText Typo="Typo.body2">@product.Tags</MudText>
-                    <MudText Typo="Typo.body2">@product.Price$</MudText>
-                </MudCardContent>
-            </MudCard>
+                <MudCard>
+                    <MudCardContent>
+                        <MudText>@product.ImageValue</MudText> @*todo*@
+                        <MudText>@product.Name</MudText>
+                        <MudText Typo="Typo.body2">@product.Description</MudText>
+                        <MudText Typo="Typo.body2">@product.Tags</MudText>
+                        <MudText Typo="Typo.body2">@product.Price$</MudText>
+                    </MudCardContent>
+                </MudCard>
+            }
         }
     }
 }
-
 else
 {
     <h2>Your are not customer</h2>

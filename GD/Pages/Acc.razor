@@ -1,72 +1,74 @@
 ﻿
 @page "/acc"
-@using System.Net.Http.Headers
 @using System.Security.Claims
+@using GD.Shared.Common
 
 
 
-<MudPaper>
-    <MudText Typo="Typo.h5">@authMessage</MudText>
 
-    <MudList T="string">
-        @foreach (var claim in claims)
-        {
-            <MudListItem>
-                @claim.Type: @claim.Value
-            </MudListItem>
-        }
-    </MudList>
-    <br>
-    <br>
-    <br>
-    <h3>Change Location</h3>
-    <MudPaper Class="pa-4">
-        <MudForm>
-            <MudTextField T="string"
-                          InputType="InputType.Text"
-                          Label="Address"
-                          Required="true"
-                          RequiredError="Address is required!"
-                          @bind-Text=@location.Address/>
 
-            <MudTextField T="double" Label="PosLati"
-                          InputType="InputType.Text"
-                          Required="true"
-                          RequiredError="PosLati is required!"
-                          @bind-Value=@location.PosLati/>
+<MudGrid Spacing="10">
+    <MudItem xs="12">
+        <MudPaper>
+            <MudText Typo="Typo.h5">@authMessage</MudText>
 
-            <MudTextField T="double" Label="PosLong"
-                          InputType="InputType.Text"
-                          Required="true"
-                          RequiredError="PosLong is required!"
-                          @bind-Value=@location.PosLong/>
-            <div class="d-flex align-center justify-space-between">
-                <MudButton Variant="Variant.Filled" OnClick="ChangeLocation" Color="Color.Primary" Class="ml-auto">Change</MudButton>
-            </div>
-        </MudForm>
-    </MudPaper>
-    <h3>Add to balance</h3>
-    <MudPaper Class="pa-4">
-        <MudForm>
-            <MudTextField T="int"
-                          InputType="InputType.Number"
-                          Label="Address"
-                          Required="true"
-                          RequiredError="Amount is required!"
-                          @bind-Value=@amount/>
-            <div class="d-flex align-center justify-space-between">
-                <MudButton Variant="Variant.Filled" OnClick="AddToBalance" Color="Color.Primary" Class="ml-auto">Change</MudButton>
-            </div>
-        </MudForm>
-    </MudPaper>
-</MudPaper>
+            <MudList T="string">
+                <MudText>Почта: @_user.Email</MudText>
+                <MudText>Роль: @role</MudText>
+                <MudText>Баланс: @_user.Balance$</MudText>
+                <MudText>Адрес: @_user.Address</MudText>
+                <MudText>Longitude: @_user.PosLong</MudText>
+                <MudText>Latitude: @_user.PosLati</MudText>
+            </MudList>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6">
+        <h3>Сменить локацию</h3>
+        <MudPaper Style="width: 65%" Class="pa-4">
+            <MudForm>
+                <MudTextField T="string"
+                              InputType="InputType.Text"
+                              Label="Ваш текущий адрес"
+                              Required="true"
+                              RequiredError="Address is required!"
+                              @bind-Text=@location.Address/>
 
+                <div class="d-flex align-center justify-space-between">
+                    <MudButton Variant="Variant.Filled" OnClick="ChangeLocation" Color="Color.Primary" Class="ml-auto">Change</MudButton>
+                </div>
+            </MudForm>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="6">
+        <h3>Добавить к балансу</h3>
+        <MudPaper Style="width: 65%" Class="pa-4">
+            <MudForm>
+                <MudTextField T="int"
+                              InputType="InputType.Number"
+                              Label="Количество"
+                              Required="true"
+                              RequiredError="Amount is required!"
+                              @bind-Value=@amount/>
+                <div class="d-flex align-center justify-space-between">
+                    <MudButton Variant="Variant.Filled" OnClick="AddToBalance" Color="Color.Primary" Class="ml-auto">Сменить</MudButton>
+                </div>
+            </MudForm>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+<MudList T="string">
+   
+    
+</MudList>
 
 @code {
     private string? authMessage;
     private string? surname;
+    private string role = "";
     private IEnumerable<Claim> claims = Enumerable.Empty<Claim>();
     Location location = new();
+    User _user = new();
     int amount = 0;
     
     protected override async Task OnInitializedAsync()
@@ -84,6 +86,8 @@
         {
             authMessage = $"{user.Identity.Name}";
             claims = user.Claims;
+            role = claims.FirstOrDefault(c => c.Type == GDUserClaimTypes.Roles)!.Value;
+            _user = (await _http.GetAsync<User>("api/auth/info")).Data!;
         }
         else
         {
@@ -93,11 +97,21 @@
 
     private async Task ChangeLocation()
     {
-        var client = _httpClientFactory.CreateClient("api");
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/Client/location");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
-        request.Content = JsonContent.Create(location);
-        await client.SendAsync(request);
+        var result = await _geolocationService.GetCurrentPosition();
+        if (result.IsSuccess)
+        {
+            location.PosLati = result.Position.Coords.Latitude;
+            location.PosLong = result.Position.Coords.Longitude;
+            _user.Address = location.Address;
+            _user.PosLati = location.PosLati;
+            _user.PosLong = location.PosLong;
+            await _http.PostAsync<Location, Unit>("/api/Client/location", location);
+            _snakbar.Add("Изменено успешно");
+        }
+        else
+        {
+            _snakbar.Add("Не получилось получить ваш геолокацию");
+        }
     }
 
     class Location
@@ -107,13 +121,22 @@
         public double PosLong { get; set; }
     }
 
+    class User
+    {
+        public Guid Id { get; set; }
+        public string Email { get; set; }
+        public string Address { get; set; }
+        public double Balance { get; set; }
+        public double PosLati { get; set; }
+        public double PosLong { get; set; }
+    }
+    
     private async Task AddToBalance()
     {
-        var client = _httpClientFactory.CreateClient("api");
-        var request = new HttpRequestMessage(HttpMethod.Post, "/api/Client/balance/add");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
-        request.Content = JsonContent.Create(new { amount });
-        await client.SendAsync(request);
+        await _http.PostAsync<Req, Unit>("/api/Client/balance/add", new(amount));
+        _user.Balance += amount;
+        //StateHasChanged();
     }
 
+    record Req(int Amount);
 }

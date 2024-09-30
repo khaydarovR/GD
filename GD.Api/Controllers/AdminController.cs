@@ -1,7 +1,9 @@
 ﻿using GD.Api.Controllers.Base;
 using GD.Api.DB;
+using GD.Shared.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace GD.Api.Controllers;
 
@@ -21,5 +23,20 @@ public class AdminController : CustomController
     public async Task<IActionResult> GetOrdersDashboard()
     {
         return Ok(_appDbContext.Orders.Where(o => o.Status == "Waiting" || o.Status == "In delivery"));
+    }
+
+    [HttpGet("users")]
+    public async Task<IActionResult> GetAllClients()
+    {
+        return Ok(await (from user in _appDbContext.Users
+            join userRole in _appDbContext.UserRoles on user.Id equals userRole.UserId
+            join role in _appDbContext.Roles on userRole.RoleId equals role.Id
+            where role.Name == GDUserRoles.Client
+            select new
+            {
+                user.Id,
+                user.Email,
+                user.Balance
+            }).ToListAsync());
     }
 }

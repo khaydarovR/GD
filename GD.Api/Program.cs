@@ -113,6 +113,101 @@ var app = builder.Build();
     }
 }
 
+//main data seeding
+{
+    using var scope = app.Services.CreateScope();
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<GDUser>>();
+    var appDbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    
+    async Task<Guid?> CreateUserAsync(string email, string password, double balance, string role)
+    {
+        if (!userManager.Users.Any(u => u.Email == email))
+        {
+            var user = new GDUser { Email = email, UserName = email, Balance = balance };
+            await userManager.CreateAsync(user, password);
+            await userManager.AddToRoleAsync(user, role);
+            return user.Id;
+        }
+
+        return null;
+    }
+    
+    async Task<Guid?> AddProductAsync(string name, string description, double price)
+    {
+        if (!appDbContext.Products.Any(p => p.Name == name))
+        {
+            var product = new Product
+            {
+                Name = name,
+                Amount = 9999,
+                Description = description,
+                Price = price,
+                ImageValue = "",
+                Tags = "",
+                Feedbacks = []
+            };
+            
+            await appDbContext.AddAsync(product);
+            await appDbContext.SaveChangesAsync();
+            return product.Id;
+        }
+
+        return null;
+    }
+    
+    async Task<Guid> CreateOrderAsync(Guid? UserId, List<Guid?> products)
+    {
+        if (UserId is null || products.Any(p => p is null)) 
+            return Guid.Empty;
+        
+        var order = new Order
+        {
+            Status = "Waiting",
+            ClientId = UserId.Value,
+            PayMethod = "online",
+            ToAddress = "asdasdad",
+        };
+        
+        await appDbContext.Orders.AddAsync(order);
+        await appDbContext.SaveChangesAsync();
+
+        foreach (var product in products)
+        {
+            var orderItem = new OrderItem
+            {
+                Amount = 5,
+                OrderId = order.Id,
+                ProductId = product!.Value,
+            };
+            
+            await appDbContext.OrderItems.AddAsync(orderItem);
+        }
+        
+        await appDbContext.SaveChangesAsync();
+        return order.Id;
+    }
+
+    var bananaId = await AddProductAsync("banana", "sdfgsdfgjioasdfkjpsdf kjldfkjsfsfjksdf", 100);
+    var buterbrodId = await AddProductAsync("buterbrod", "sdfgsdfgjioasdfkjpsdf kjldfkjsfsfjksdf", 100);
+    var teaId = await AddProductAsync("tea", "sdfgsdfgjioasdfkjpsdf kjldfkjsfsfjksdf", 100);
+    
+    var client1 = await CreateUserAsync("client1@c", "qwerty", Random.Shared.Next(1000, 2001), GDUserRoles.Client);
+    var client2 = await CreateUserAsync("client2@c", "qwerty", Random.Shared.Next(1000, 2001), GDUserRoles.Client);
+    var client3 = await CreateUserAsync("client3@c", "qwerty", Random.Shared.Next(1000, 2001), GDUserRoles.Client);
+    var client4 = await CreateUserAsync("client4@c", "qwerty", Random.Shared.Next(1000, 2001), GDUserRoles.Client);
+    var client5 = await CreateUserAsync("client5@c", "qwerty", Random.Shared.Next(1000, 2001), GDUserRoles.Client);
+    
+    await CreateUserAsync("courier@c", "qwerty", 0, GDUserRoles.Courier);
+    await CreateUserAsync("courier@c", "qwerty", 0, GDUserRoles.Courier);
+    await CreateUserAsync("courier@c", "qwerty", 0, GDUserRoles.Courier);
+
+    await CreateOrderAsync(client1, [bananaId, buterbrodId]);
+    await CreateOrderAsync(client2, [teaId, buterbrodId]);
+    await CreateOrderAsync(client3, [buterbrodId]);
+    await CreateOrderAsync(client4, [teaId, buterbrodId, bananaId]);
+    await CreateOrderAsync(client5, [bananaId]);
+}
+
 app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.

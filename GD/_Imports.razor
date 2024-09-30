@@ -12,14 +12,17 @@
 @using GD.Layout
 @using MudBlazor
 @using Blazored.LocalStorage;
+@using Darnton.Blazor.DeviceInterop.Geolocation
 
 
 @inject ISnackbar _snakbar
 @inject HttpService _http
 @inject IHttpClientFactory _httpClientFactory
+@inject UserService _userService
 @inject AuthenticationStateProvider _auth
 @inject ILocalStorageService _ls
 @inject NavigationManager _nm
+@inject GeolocationService _geolocationService
 
 
 

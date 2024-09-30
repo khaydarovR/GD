@@ -3,6 +3,7 @@
 @using GD.Shared.Request
 @using GD.Shared.Response
 @using System.Security.Claims
+@using System.Text.Json
 
 
 @page "/login"
@@ -50,9 +51,10 @@
     {
         var dto = new SignInRequest() { Email = Email, Pwd = Pwd };
         dto.Email = Uri.EscapeDataString(dto.Email);
-        var res = await _http.Get<SignInResponse>($"api/Auth/SignIn?Email={dto.Email}&Pwd={dto.Pwd}");
+        var res = await _http.GetAsync<SignInResponse>($"api/Auth/SignIn?Email={dto.Email}&Pwd={dto.Pwd}");
         if (res.IsSuccess)
         {
+            var json = JsonSerializer.Serialize(await _userService.GetInfo(res.Data!.Jwt));
             await _ls.SetItemAsStringAsync("JWT", res.Data!.Jwt);
             await _ls.RemoveItemAsync("order");
             _nm.NavigateTo("/acc");

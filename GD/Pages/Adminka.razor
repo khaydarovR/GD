@@ -9,7 +9,7 @@
 @if (isAdmin)
 {
     <MudGrid>
-        <MudItem xs="12" sm="7">
+        <MudItem xs="6">
             <h3>Create Product</h3>
             <MudPaper Class="pa-4">
                 <MudForm>
@@ -55,22 +55,22 @@
                     </div>
                 </MudForm>
             </MudPaper>
-
+        </MudItem>
+        <MudItem xs="6">
             <h3>Create Courier</h3>
             <MudPaper Class="pa-4">
-                <MudForm>
-                    <MudTextField T="Guid"
-                                  InputType="InputType.Text"
-                                  Label="Id"
-                                  Required="true"
-                                  RequiredError="Id is required!"
-                                  @bind-Value=@clientId/>
-                    <div class="d-flex align-center justify-space-between">
-                        <MudButton Variant="Variant.Filled" OnClick="MakeCourier" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                    </div>
-                </MudForm>
+                @foreach (var client in _clients)
+                {
+                    <MudCard>
+                        <MudText>Айди: @client.Id</MudText>
+                        <MudText>Почта: @client.Email</MudText>
+                        <MudText>Баланс: @client.Balance</MudText>
+                        <div class="d-flex align-center justify-space-between">
+                            <MudButton Variant="Variant.Filled" OnClick="() => MakeCourier(client.Id)" Color="Color.Primary" Class="ml-auto">Сделать Курьером</MudButton>
+                        </div>
+                    </MudCard>
+                }
             </MudPaper>
-
         </MudItem>
     </MudGrid>
 }
@@ -83,8 +83,8 @@ else
 @code {
     readonly Request _request = new();
     bool isAdmin = false;
-    Guid clientId = Guid.Empty;
-
+    List<User> _clients = [];
+    
     async Task OnLogin()
     {
         using var client = _httpClientFactory.CreateClient("api");
@@ -100,9 +100,22 @@ else
         var user = authState.User;
         isAdmin = user.IsInRole(GDUserRoles.Admin);
         _auth.AuthenticationStateChanged += _ => StateHasChanged();
+
+        if (isAdmin)
+        {
+            _clients = (await _http.GetAsync<List<User>>("api/admin/users")).Data!;
+        }
+        
         StateHasChanged();
     }
-
+        
+    class User
+    {
+        public Guid Id { get; set; }
+        public string Email { get; set; }
+        public double Balance { get; set; }
+    }
+    
     class Request
     {
         public string Name { get; set; }
@@ -113,12 +126,13 @@ else
         public double Price { get; set; }
     }
 
-    private async Task MakeCourier()
+    private async Task MakeCourier(Guid clientId)
     {
         using var client = _httpClientFactory.CreateClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/Courier/new");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
         request.Content = JsonContent.Create(new { clientId });
+        _clients.RemoveAll(c => c.Id == clientId);
         await client.SendAsync(request);
     }
 }

@@ -10,6 +10,7 @@ using GD.Api.DB;
 using Microsoft.AspNetCore.Identity;
 using GD.Api.DB.Models;
 using GD.Shared.Common;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace GD.Api.Controllers
@@ -18,6 +19,21 @@ namespace GD.Api.Controllers
     [ApiController]
     public class AuthController(AppDbContext context, UserManager<GDUser> um, ILogger<AuthController> l): CustomController
     {
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [HttpGet("info")]
+        public IActionResult GetInfo()
+        {
+            var user = context.Users.FirstOrDefault(u => u.Id == ContextUserId)!;
+            return Ok(new
+            {
+                user.Id,
+                user.Email,
+                user.Address,
+                user.Balance,
+                user.PosLati,
+                user.PosLong,
+            });
+        }
         
         [HttpGet(nameof(SignIn))]
         public async Task<ActionResult<SignInResponse>> SignIn([FromQuery] SignInRequest dto)
@@ -50,7 +66,7 @@ namespace GD.Api.Controllers
 
             var token = new JwtSecurityTokenHandler().WriteToken(jwt);
             var rsp = new SignInResponse() { Jwt = token };
-
+    
             return Ok(rsp);
         }
 
