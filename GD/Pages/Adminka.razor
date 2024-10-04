@@ -26,11 +26,19 @@
                                   RequiredError="Description is required!"
                                   @bind-Text=@_request.Description/>
 
-                    <MudTextField T="string" Label="ImageValue"
-                                  InputType="InputType.Text"
-                                  Required="true"
-                                  RequiredError="Description is required!"
-                                  @bind-Text=@_request.ImageValue/>
+                    @* <MudTextField T="string" Label="ImageValue" *@
+                    @*               InputType="InputType.Text" *@
+                    @*               Required="true" *@
+                    @*               RequiredError="Description is required!" *@
+                    @*               @bind-Text=@_request.ImageValue/> *@
+
+                    <MudFileUpload Required="true" T="IBrowserFile" FilesChanged="UploadFiles">
+                        <ActivatorContent>
+                            <MudFab Color="Color.Secondary"
+                                    StartIcon="@Icons.Material.Filled.Image"
+                                    Label="Load picture" />
+                        </ActivatorContent>
+                    </MudFileUpload>
 
                     <MudTextField T="double" Label="Price"
                                   InputType="InputType.Number"
@@ -51,7 +59,7 @@
                                   @bind-Value=@_request.Amount/>
 
                     <div class="d-flex align-center justify-space-between">
-                        <MudButton Variant="Variant.Filled" OnClick="OnLogin" Color="Color.Primary" Class="ml-auto">Register</MudButton>
+                        <MudButton Variant="Variant.Filled" OnClick="AddProduct" Color="Color.Primary" Class="ml-auto">Register</MudButton>
                     </div>
                 </MudForm>
             </MudPaper>
@@ -84,14 +92,24 @@ else
     readonly Request _request = new();
     bool isAdmin = false;
     List<User> _clients = [];
+    MemoryStream image = new MemoryStream();
     
-    async Task OnLogin()
+    async Task AddProduct()
     {
         using var client = _httpClientFactory.CreateClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, "api/product");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
         request.Content = JsonContent.Create(_request);
         var response = await client.SendAsync(request);
+
+        //var result = await _http.PostAsync<Request, Response>("api/product", _request);
+        var result = await response.Content.ReadFromJsonAsync<Response>();
+
+        var imageRequest = new HttpRequestMessage(HttpMethod.Post, $"api/product/image?id={result!.Id}");
+        imageRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
+        imageRequest.Content = new StreamContent(image, (int)image.Length);
+        imageRequest.Content!.Headers.Add("Content-Type", "image/jpeg");
+        var response2 = await client.SendAsync(imageRequest);
     }
 
     protected override async Task OnInitializedAsync()
@@ -115,6 +133,29 @@ else
         public string Email { get; set; }
         public double Balance { get; set; }
     }
+
+    class Response
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string ImageValue { get; set; }
+        public double Price { get; set; }
+        public string Tags { get; set; }
+        public int Amount { get; set; }
+
+        public List<Feedback> Feedbacks { get;set;}
+    }
+
+    class Feedback
+    {
+        public Guid Id { get; set; }
+        public Guid ProductId { get; set; }
+        public int Stars { get; set; }
+        public Guid ClientId { get; set; }
+        public string Text { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
     
     class Request
     {
@@ -135,4 +176,12 @@ else
         _clients.RemoveAll(c => c.Id == clientId);
         await client.SendAsync(request);
     }
+
+    private async Task UploadFiles(IBrowserFile? arg)
+    {
+        if (arg is null) return;
+        var stream = arg.OpenReadStream();
+        await stream.CopyToAsync(image);
+    }
+
 }

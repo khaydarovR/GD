@@ -25,9 +25,29 @@ public class ProductController : CustomController
     public async Task<IActionResult> AddProduct([FromBody] ProductRequest productRequest)
     {
         var product = productRequest.Adapt<Product>();
+        product.ImageValue = "";
         _appDbContext.Products.Add(product);
         await _appDbContext.SaveChangesAsync();
         return Ok(product);
+    }
+    
+    [HttpPost("image")]
+    [Authorize(AuthenticationSchemes = "Bearer", Policy = "admin")]
+    public async Task<IActionResult> SetImage([FromQuery] Guid id)
+    {
+        var product = await _appDbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
+
+        if (product is null)
+            return BadRequest("товар не найден");
+        
+        using var buffer = new MemoryStream();
+        await Request.Body.CopyToAsync(buffer, Request.HttpContext.RequestAborted);
+        
+        var imageValue = Convert.ToBase64String(buffer.ToArray());
+        product.ImageValue = imageValue;
+        _appDbContext.Products.Update(product);
+        await _appDbContext.SaveChangesAsync();
+        return Ok();
     }
     
     [HttpDelete]
@@ -56,5 +76,19 @@ public class ProductController : CustomController
         if (product is null) return BadRequest("товар не найден");
 
         return Ok(product);
+    }
+    
+    [HttpGet("image/id:guid")]
+    public async Task<IActionResult> GetProductImage([FromRoute] Guid id)
+    {
+        var product = await _appDbContext.Products.Include(p => p.Feedbacks).FirstOrDefaultAsync(p => p.Id == id);
+        if (product is null) return BadRequest("товар не найден");
+
+        Response.ContentType = "image/jpeg";
+        var bytes = Convert.FromBase64String(product.ImageValue);
+        var stream = new MemoryStream(bytes);
+        await stream.CopyToAsync(Response.Body);
+        
+        return Ok();
     }
 }
