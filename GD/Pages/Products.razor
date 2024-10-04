@@ -1,5 +1,6 @@
 ﻿@page "/Products"
 @using System.Net.Http.Headers
+@using System.Drawing
 <h3>Products</h3>
 
 <div>
@@ -7,7 +8,11 @@
     {
         <MudCard>
             <MudCardContent>
-                <MudText>@product.ImageValue</MudText> @*todo*@
+                
+
+                <img width="400" src="data:image/png;base64, @product.ImageValue" alt="Red dot" />
+
+
                 <MudText>@product.Name</MudText>
                 <MudText Typo="Typo.body2">@product.Description</MudText>
                 <MudText Typo="Typo.body2">@product.Tags</MudText>
@@ -16,7 +21,7 @@
             <MudCardActions>
                 <MudButton OnClick="() => AddToOrder(product.Id)"
                            Variant="Variant.Text"
-                           Color="Color.Primary">
+                           Color="MudBlazor.Color.Primary">
                     Add to order
                 </MudButton>
             </MudCardActions>
@@ -26,6 +31,24 @@
 
 @code {
     List<Request> _products = [];
+
+
+    private byte[] ImageToByteArray(System.Drawing.Image image)
+    {
+        try
+        {
+            using (var ms = new MemoryStream())
+            {
+                image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                return ms.ToArray();
+            }
+        }
+        catch (Exception)
+        {
+            return new byte[120];
+        }
+
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,6 +101,7 @@
         public string Name { get; set; }
         public string Description { get; set; }
         public string ImageValue { get; set; }
+        public Image Image { get; set; }
         public double Price { get; set; }
         public string Tags { get; set; }
         public int Amount { get; set; }    

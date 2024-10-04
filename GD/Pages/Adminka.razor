@@ -32,7 +32,7 @@
                     @*               RequiredError="Description is required!" *@
                     @*               @bind-Text=@_request.ImageValue/> *@
                     @fileName
-                    <MudFileUpload T="IBrowserFile" Accept=".png, .jpg" FilesChanged="UploadFiles">
+                    <MudFileUpload T="IBrowserFile" Accept=".png" FilesChanged="UploadFiles">
                         <ActivatorContent>
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
@@ -191,7 +191,7 @@ else
     private async Task UploadFiles(IBrowserFile? arg)
     {
         if (arg is null) return;
-        using var stream = arg.OpenReadStream();
+        using var stream = arg.OpenReadStream(135271630);
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms);
         imageData = ms.ToArray();
