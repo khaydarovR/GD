@@ -31,12 +31,14 @@
                     @*               Required="true" *@
                     @*               RequiredError="Description is required!" *@
                     @*               @bind-Text=@_request.ImageValue/> *@
-
-                    <MudFileUpload Required="true" T="IBrowserFile" FilesChanged="UploadFiles">
+                    @fileName
+                    <MudFileUpload T="IBrowserFile" Accept=".png, .jpg" FilesChanged="UploadFiles">
                         <ActivatorContent>
-                            <MudFab Color="Color.Secondary"
-                                    StartIcon="@Icons.Material.Filled.Image"
-                                    Label="Load picture" />
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.CloudUpload">
+                                Upload Files
+                            </MudButton>
                         </ActivatorContent>
                     </MudFileUpload>
 
@@ -93,7 +95,7 @@ else
     bool isAdmin = false;
     List<User> _clients = [];
     MemoryStream image = new MemoryStream();
-    
+
     async Task AddProduct()
     {
         using var client = _httpClientFactory.CreateClient("api");
@@ -102,14 +104,20 @@ else
         request.Content = JsonContent.Create(_request);
         var response = await client.SendAsync(request);
 
-        //var result = await _http.PostAsync<Request, Response>("api/product", _request);
         var result = await response.Content.ReadFromJsonAsync<Response>();
 
-        var imageRequest = new HttpRequestMessage(HttpMethod.Post, $"api/product/image?id={result!.Id}");
-        imageRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
-        imageRequest.Content = new StreamContent(image, (int)image.Length);
-        imageRequest.Content!.Headers.Add("Content-Type", "image/jpeg");
-        var response2 = await client.SendAsync(imageRequest);
+        if (imageData != null)
+        {
+            var imageRequest = new HttpRequestMessage(HttpMethod.Post, $"api/product/image?id={result!.Id}");
+            imageRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
+            imageRequest.Content = new ByteArrayContent(imageData);
+            imageRequest.Content.Headers.ContentType = new MediaTypeHeaderValue(fileType);
+            var response2 = await client.SendAsync(imageRequest);
+            if (response2.IsSuccessStatusCode)
+            {
+                _snakbar.Add("Изображение добавлено");
+            }
+        }
     }
 
     protected override async Task OnInitializedAsync()
@@ -123,10 +131,10 @@ else
         {
             _clients = (await _http.GetAsync<List<User>>("api/admin/users")).Data!;
         }
-        
+
         StateHasChanged();
     }
-        
+
     class User
     {
         public Guid Id { get; set; }
@@ -156,7 +164,7 @@ else
         public string Text { get; set; }
         public DateTime CreatedAt { get; set; }
     }
-    
+
     class Request
     {
         public string Name { get; set; }
@@ -177,11 +185,17 @@ else
         await client.SendAsync(request);
     }
 
+    string fileName = "";
+    string fileType = "";
+    byte[] imageData;
     private async Task UploadFiles(IBrowserFile? arg)
     {
         if (arg is null) return;
-        var stream = arg.OpenReadStream();
-        await stream.CopyToAsync(image);
+        using var stream = arg.OpenReadStream();
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        imageData = ms.ToArray();
+        fileName = arg.Name;
+        fileType = arg.ContentType;
     }
-
 }
