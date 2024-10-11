@@ -29,7 +29,7 @@ public class OrderController : CustomController
     {
         var order = new Order
         {
-            Status = "Selecting",
+            Status = GDOrderStatuses.Selecting,
             ClientId = ContextUserId
         };
         
@@ -82,7 +82,7 @@ public class OrderController : CustomController
         return Ok(_appDbContext.Orders
             .Include(o => o.OrderItems)
             .ThenInclude(o => o.Product)
-            .Where(o => o.Status == "Waiting")
+            .Where(o => o.Status == GDOrderStatuses.Waiting)
             .Select(order => new
             {
                 order.Id,
@@ -144,7 +144,7 @@ public class OrderController : CustomController
             return BadRequest("заказ не найден");
         }
 
-        if (order.Status != "Selecting")
+        if (order.Status != GDOrderStatuses.Selecting)
         {
             return BadRequest("заказ уже обрабатывается");
         }
@@ -162,7 +162,7 @@ public class OrderController : CustomController
         order.TargetPosLong = orderRequest.TargetPosLong;
         order.TargetPosLati = orderRequest.TargetPosLati;
         order.CreatedAt = DateTime.UtcNow;
-        order.Status = "Waiting";
+        order.Status = GDOrderStatuses.Waiting;
         order.TotalPrice = total;
         order.PayMethod = orderRequest.PayMethod;
         
@@ -197,7 +197,7 @@ public class OrderController : CustomController
         order.TargetPosLati = order.Client.PosLati;
         order.PayMethod = orderRequest.PayMethod;
         order.CreatedAt = DateTime.UtcNow;
-        order.Status = "Waiting";
+        order.Status = GDOrderStatuses.Waiting;
         order.TotalPrice = total;
         
         _appDbContext.Orders.Update(order);
@@ -214,7 +214,7 @@ public class OrderController : CustomController
         if (order is null) return BadRequest("заказ не найден");
         
         order.StartDeliveryAt = DateTime.UtcNow;
-        order.Status = "In delivery";
+        order.Status = GDOrderStatuses.InDelivery;
         order.CourierId = ContextUserId;
         
         _appDbContext.Orders.Update(order);
@@ -252,7 +252,7 @@ public class OrderController : CustomController
         if (order is null) return BadRequest("заказ не найден");
 
         order.OrderClosedAt = DateTime.UtcNow;
-        order.Status = "Delivered";
+        order.Status = GDOrderStatuses.Delivered;
 
         if (order.PayMethod!.ToLower() == "online")
         {

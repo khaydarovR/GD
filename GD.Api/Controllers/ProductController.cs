@@ -45,7 +45,7 @@ public class ProductController : CustomController
         
         var imageValue = Convert.ToBase64String(buffer.ToArray());
         product.ImageValue = imageValue;
-        Console.WriteLine(product.ImageValue);
+
         _appDbContext.Products.Update(product);
         await _appDbContext.SaveChangesAsync();
         return Ok();
