@@ -41,7 +41,6 @@ namespace GD.Api.DB.Models
         public Guid Id { get; set; }
         public Guid ProductId { get; set; }
         public Guid OrderId { get; set; }
-        [JsonIgnore]
         public Product Product { get; set; }
         [JsonIgnore]
         public Order Order { get; set; }

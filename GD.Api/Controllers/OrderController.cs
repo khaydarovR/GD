@@ -79,31 +79,12 @@ public class OrderController : CustomController
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "courier")]
     public IActionResult GetWaitingOrders()
     {
-        return Ok(_appDbContext.Orders
+        var res = _appDbContext.Orders
             .Include(o => o.OrderItems)
             .ThenInclude(o => o.Product)
-            .Where(o => o.Status == GDOrderStatuses.Waiting)
-            .Select(order => new
-            {
-                order.Id,
-                order.CreatedAt,
-                order.StartDeliveryAt,
-                order.OrderClosedAt,
-                order.ToAddress,
-                order.TotalPrice,
-                order.Status,
-                order.PayMethod,
-                Products = order.OrderItems.Select(oi => new
-                {
-                    oi.Product.Id,
-                    oi.Product.Name,
-                    oi.Product.Description,
-                    oi.Product.ImageValue,
-                    oi.Product.Price,
-                    oi.Product.Tags,
-                    oi.Amount
-                })
-            }));
+            .ToList();
+        
+        return Ok(res);
     }
     
     [HttpPost("add")]
@@ -192,7 +173,7 @@ public class OrderController : CustomController
             if (user!.Balance < total) return BadRequest("недостаточно средств");
         }
         
-        order.ToAddress = order.Client.Address;
+        order.ToAddress = orderRequest.ToAddress;
         order.TargetPosLong = order.Client.PosLong;
         order.TargetPosLati = order.Client.PosLati;
         order.PayMethod = orderRequest.PayMethod;
