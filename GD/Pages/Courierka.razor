@@ -5,7 +5,7 @@
 
 @if (isCourier)
 {
-    @foreach (var response in _responses)
+    @foreach (var response in _responses.Where(r => r.Status == "Ожидание"))
     {
         @foreach (var product in response!.Products)
         {
