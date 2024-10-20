@@ -36,7 +36,9 @@ public class AdminController : CustomController
             {
                 user.Id,
                 user.Email,
-                user.Balance
+                user.Balance,
+                user.PosLati,
+                user.PosLong
             }).ToListAsync());
     }
 }

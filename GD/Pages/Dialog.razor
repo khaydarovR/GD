@@ -1,0 +1,43 @@
+﻿@using LeafletForBlazor
+<MudDialog>
+    <DialogContent>
+        <RealTimeMap @ref="_realTimeMap" OnAfterMapLoaded="Callback" height="462px" width="462px"></RealTimeMap>main
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    RealTimeMap _realTimeMap = new();
+
+    [Parameter]
+    public double Lat { get; set; }
+
+    [Parameter]
+    public double Lon { get; set; }
+    
+    private void Submit() => MudDialog.Close(DialogResult.Ok(true));
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Callback()
+    {
+        _realTimeMap.View.setZoomLevel = 18;
+        _realTimeMap.View.setCenter = new()
+        {
+            latitude = Lat,
+            longitude = Lon
+        };
+
+        _realTimeMap.Geometric.Points.add(new RealTimeMap.StreamPoint
+        {
+            latitude = Lat,
+            longitude = Lon,
+        });    
+    }
+}

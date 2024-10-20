@@ -4,19 +4,9 @@ namespace GD.Api.Hubs
 {
     public class PosHub: Hub
     {
-        public async Task SendPos(string user, string pos)
+        public async Task SendPos(string user, double lat, double lon)
         {
-            Console.WriteLine($"Send {user} {pos} to all");
-            await Clients.All.SendAsync("GetPos", user, pos);
-
-
-        }
-
-        public async Task Send(string username, string message)
-        {
-            Console.WriteLine($"Send {username} {message} to all");
-
-            await this.Clients.All.SendAsync("Receive", username, message);
+            Console.WriteLine($"{user} {lat} {lon}");
         }
     }
 }

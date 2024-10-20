@@ -77,6 +77,7 @@
                         <MudText>Баланс: @client.Balance</MudText>
                         <div class="d-flex align-center justify-space-between">
                             <MudButton Variant="Variant.Filled" OnClick="() => MakeCourier(client.Id)" Color="Color.Primary" Class="ml-auto">Сделать Курьером</MudButton>
+                            <MudButton Variant="Variant.Filled" OnClick="() => GetLocation(client.PosLati, client.PosLong)" Color="Color.Primary" Class="ml-auto">Локация</MudButton>
                         </div>
                     </MudCard>
                 }
@@ -88,7 +89,6 @@ else
 {
     <h1>You are not admin</h1>
 }
-
 
 @code {
     readonly Request _request = new();
@@ -140,6 +140,8 @@ else
         public Guid Id { get; set; }
         public string Email { get; set; }
         public double Balance { get; set; }
+        public double PosLati { get; set; }
+        public double PosLong { get; set; }
     }
 
     class Response
@@ -197,5 +199,16 @@ else
         imageData = ms.ToArray();
         fileName = arg.Name;
         fileType = arg.ContentType;
+    }
+
+    private async Task GetLocation(double clientPosLati, double clientPosLong)
+    {
+        var parameters = new DialogParameters<Dialog>
+        {
+            { x => x.Lat, clientPosLati },
+            { x => x.Lon, clientPosLong },
+        };
+        
+        await _dialog.ShowAsync<Dialog>("", parameters);
     }
 }
