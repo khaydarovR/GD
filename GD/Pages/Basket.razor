@@ -1,40 +1,52 @@
 ﻿@page "/Basket"
 @using System.Net.Http.Headers
 @using GD.Shared.Common
+@using GD.Shared.Request
 <h3>Basket</h3>
 
 @if (isClient)
 {
     @foreach (var response in _responses)
     {
-        if(response.Status != "Delivered")
+        if(response.Status != GDOrderStatuses.Delivered)
         {
             <h3>Status: @response!.Status</h3>
             
-            <MudPaper Class="pa-4">
-                <MudForm>
-                    <MudTextField T="string"
-                                  InputType="InputType.Text"
-                                  Label="Name"
-                                  Required="true"
-                                  RequiredError="payMethod is required!"
-                                  @bind-Text=@payMethod/>
-                    <div class="d-flex align-center justify-space-between">
-                        <MudButton Variant="Variant.Filled" OnClick="() => CompleteOrder(response.Id)" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                    </div>
-                </MudForm>
-            </MudPaper>
+            if (response.Status == GDOrderStatuses.Selecting)
+            {
+                <MudPaper Class="pa-4">
+                    <MudForm>
+                        <MudSelect T="string" @bind-Value=payMethod>
+                            <MudSelectItem Value="GDPayMethods.Online"></MudSelectItem>
+                            <MudSelectItem Value="GDPayMethods.BankCard"></MudSelectItem>
+                            <MudSelectItem Value="GDPayMethods.Cash"></MudSelectItem>
+                        </MudSelect>
+
+                        <MudTextField T="string"
+                                      InputType="InputType.Text"
+                                      Label="Адрес доставки"
+                                      Required="true"
+                                      RequiredError="address is required!"
+                                      @bind-Text=@toAddress />
+                        <div class="d-flex align-center justify-space-between">
+                            <MudButton Variant="Variant.Filled" OnClick="() => CompleteOrder(response.Id)"
+                                       Color="Color.Primary" Class="ml-auto">Подтвердить</MudButton>
+                        </div>
+                    </MudForm>
+                </MudPaper>
+            }
+           
             
             @foreach (var product in response!.Products)
             {
 
                 <MudCard>
                     <MudCardContent>
-                        <img width="400" src="data:image/png;base64, @product.ImageValue" alt="Red dot" />             
-                        <MudText>@product.Name</MudText>
+                    @*     <img width="400" src="data:image/png;base64, @product.ImageValue" alt="Red dot" />  *@            
+                        <MudText Typo="Typo.h5">@product.Name</MudText>
                         <MudText Typo="Typo.body2">@product.Description</MudText>
-                        <MudText Typo="Typo.body2">@product.Tags</MudText>
-                        <MudText Typo="Typo.body2">@product.Price$</MudText>
+                        <MudText Typo="Typo.caption"># @product.Tags</MudText>
+                        <MudText Typo="Typo.body2">@product.Price руб</MudText>
                     </MudCardContent>
                 </MudCard>
             }
@@ -49,7 +61,8 @@ else
 @code {
     bool isClient = false;
     List<Response> _responses = new();
-    string payMethod = "online";
+    string toAddress = "Набережные Челны, ул Моторная, д 14";
+    string payMethod = GDPayMethods.Online;
 
     protected override async Task OnInitializedAsync()
     {
@@ -63,7 +76,7 @@ else
             var orderId = Guid.Empty;
             if(await _ls.ContainKeyAsync("order")) 
                 orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
-            
+
             var client = _httpClientFactory.CreateClient("api");
             var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Client/basket");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
@@ -72,10 +85,10 @@ else
 
             if (_responses.FirstOrDefault(r => r.Id == orderId)?.Status == "Delivered") await _ls.RemoveItemAsync("order");
         }
-        
+
         StateHasChanged();
     }
-    
+
     class ProductResponse
     {
         public string Name { get; set; }
@@ -98,11 +111,18 @@ else
         var client = _httpClientFactory.CreateClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, $"/api/Order/completewithdefault");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
-        request.Content = JsonContent.Create(new
+        OrderRequestWithDefault requestWithDefault = new OrderRequestWithDefault
         {
-            orderId,
-            payMethod
-        });
+            OrderId = orderId,
+            PayMethod = payMethod,
+            ToAddress = toAddress,
+        };
+        request.Content = JsonContent.Create(requestWithDefault);
         var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            await _ls.RemoveItemAsync("order");
+        }
     }
 }

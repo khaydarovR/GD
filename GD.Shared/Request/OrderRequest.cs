@@ -19,4 +19,5 @@ public class OrderRequestWithDefault
     /// Наличка, Карта, Онлайн
     /// </summary>
     public string PayMethod { get; set; }
+    public string ToAddress { get; set; }
 }
