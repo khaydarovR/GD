@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using GD.Shared.Response;
+using Microsoft.AspNetCore.SignalR;
 
 namespace GD.Api.Hubs
 {
     public class PosHub: Hub
     {
-        public async Task SendPos(string user, double lat, double lon)
+        public async Task SendPos(HubPosInfo info)
         {
-            Console.WriteLine($"{user} {lat} {lon}");
+            Console.WriteLine($"================ {info.UserId} {info.TargetPosLati} {info.TargetPosLong}");
+
+            await this.Clients.All.SendAsync("SharePos", info);
         }
     }
 }

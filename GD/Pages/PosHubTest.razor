@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.SignalR.Client
+﻿@using GD.Shared.Response
+@using Microsoft.AspNetCore.SignalR.Client
 
 
 @page "/pos"
@@ -15,9 +16,20 @@
 <input @bind="position" placeholder="Enter your position" />
 <button @onclick="SendPosition">Send Position</button>
 
+<MudPaper>
+    <MudList T="string">
+        @foreach (var p in poslog)
+        {
+            <MudListItem>@p.UserId : @p.TargetPosLong @p.TargetPosLati</MudListItem>
+        }
+    </MudList>
+</MudPaper>
+
 @code {
     private string userName;
     private string position;
+
+    List<HubPosInfo> poslog = new();
 
     private HubConnection hubConnection;
 
@@ -29,16 +41,10 @@
             .WithUrl(url)
             .Build();
 
-        hubConnection.On<string, string>("GetPos", (user, pos) =>
+        hubConnection.On<HubPosInfo>("SharePos", (info) =>
         {
-            Console.WriteLine($"{user} is at position {pos}");
-            // You can update the UI or perform any other action here
-        });
-        hubConnection.On<string, string>("Receive", (user, msg) =>
-        {
-            Console.WriteLine($"Receive {user} : {msg}");
-
-            _snakbar.Add($"{user}: {msg}");
+            poslog.Add(info);
+            StateHasChanged();
         });
         
         await hubConnection.StartAsync();

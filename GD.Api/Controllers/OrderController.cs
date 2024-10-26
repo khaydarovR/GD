@@ -86,8 +86,45 @@ public class OrderController : CustomController
         
         return Ok(res);
     }
-    
-    [HttpPost("add")]
+
+	[HttpGet("waiting-f")]
+	[Authorize(AuthenticationSchemes = "Bearer", Policy = "courier")]
+	public IActionResult GetLiteInfo()
+	{
+		var res = _appDbContext.Orders
+			.Include(o => o.OrderItems) // Сначала загружаем связанные элементы заказов
+				.ThenInclude(o => o.Product) // Загружаем продукты
+			.Select(order => new Order
+			{
+				Id = order.Id,
+				CreatedAt = order.CreatedAt,
+				ClientId = order.ClientId,
+                Status = order.Status,
+                StartDeliveryAt = order.StartDeliveryAt,
+                OrderClosedAt = order.OrderClosedAt,
+                PayMethod = order.PayMethod,
+                ToAddress = order.ToAddress,
+                TargetPosLati = order.TargetPosLati,
+                TargetPosLong = order.TargetPosLong,
+                TotalPrice = order.TotalPrice,
+                CourierId = order.CourierId,
+				OrderItems = order.OrderItems.Select(item => new OrderItem
+				{
+					Id = item.Id,
+				    Amount = item.Amount,
+					ProductId = item.ProductId,
+					Product = new Product { Id = item.Product.Id, Amount = item.Product.Amount, Feedbacks = item.Product.Feedbacks,
+                    Description = item.Product.Description, Name = item.Product.Name, Price = item.Product.Price, Tags = item.Product.Tags}, // например, название продукта
+                    OrderId = item.OrderId,
+				}).ToList()
+			})
+			.ToList();
+
+		return Ok(res);
+	}
+
+
+	[HttpPost("add")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "client")]
     public async Task<IActionResult> AddToOrder([FromBody] OrderItemRequest request)
     {
@@ -204,20 +241,15 @@ public class OrderController : CustomController
         return Ok(order);
     }    
     
-    [HttpPost("change/{id:guid}")]
+    [HttpPost("letgo/{oid:guid}")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "courier")]
-    public async Task<IActionResult> ChangeCourier([FromRoute] Guid id)
+    public async Task<IActionResult> Letgo([FromRoute] Guid oid)
     {
-        var order = await _appDbContext.Orders.FirstOrDefaultAsync(o => o.Id == id);
+        var order = await _appDbContext.Orders.FirstOrDefaultAsync(o => o.Id == oid);
         if (order is null) return BadRequest("заказ не найден");
-
-        var courier = await _appDbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
-        if (courier is null) 
-            return BadRequest("курьер не найден");
-        if(!await _userManager.IsInRoleAsync(courier, GDUserRoles.Courier))
-            return BadRequest("пользователь не является курьером");
         
-        order.CourierId = id;
+        order.CourierId = null;
+        order.Status = GDOrderStatuses.Waiting;
         
         _appDbContext.Orders.Update(order);
         await _appDbContext.SaveChangesAsync();
@@ -225,7 +257,7 @@ public class OrderController : CustomController
         return Ok(order);
     }
 
-    [HttpPost("close/{id:guid}")]
+    [HttpPost("close/{id:Guid}")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "courier")]
     public async Task<IActionResult> CloseOrder([FromRoute] Guid id)
     {
