@@ -209,6 +209,6 @@ else
             { x => x.Lon, clientPosLong },
         };
         
-        await _dialog.ShowAsync<Dialog>("", parameters);
+        await _dialog.ShowAsync<Dialog>("", parameters, new DialogOptions() {});
     }
 }

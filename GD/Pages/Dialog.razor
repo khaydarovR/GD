@@ -1,7 +1,8 @@
 ﻿@using LeafletForBlazor
+@using LeafletForBlazor.RealTime.points
 <MudDialog>
     <DialogContent>
-        <RealTimeMap @ref="_realTimeMap" OnAfterMapLoaded="Callback" height="462px" width="462px"></RealTimeMap>main
+        <RealTimeMap @ref="_realTimeMap" OnAfterMapLoaded="Callback" height="462px" width="462px"></RealTimeMap>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
@@ -38,6 +39,14 @@
         {
             latitude = Lat,
             longitude = Lon,
-        });    
+            type = "Point"
+        });
+
+        _realTimeMap.Geometric.Points.AppearanceOnType(p => p.type == "Point").pattern = new RealTimeMap.PointIcon
+        {
+            iconUrl = "https://cdn-icons-png.flaticon.com/512/252/252025.png",
+            iconSize = [32,32],
+            iconAnchor = [16,16],
+        };
     }
 }
