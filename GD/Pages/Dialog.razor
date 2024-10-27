@@ -26,7 +26,7 @@
 
     private void Cancel() => MudDialog.Cancel();
 
-    private void Callback()
+    private async Task Callback()
     {
         _realTimeMap.View.setZoomLevel = 18;
         _realTimeMap.View.setCenter = new()
@@ -35,18 +35,35 @@
             longitude = Lon
         };
 
-        _realTimeMap.Geometric.Points.add(new RealTimeMap.StreamPoint
-        {
-            latitude = Lat,
-            longitude = Lon,
-            type = "Point"
-        });
+        Appearence(_realTimeMap);
+        await Upload(_realTimeMap);
+    }
 
-        _realTimeMap.Geometric.Points.AppearanceOnType(p => p.type == "Point").pattern = new RealTimeMap.PointIcon
+    private void Callback(RealTimeMap.MapEventArgs obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void Appearence(RealTimeMap rtm)
+    {
+        rtm.Geometric.Points.AppearanceOnType(p => p.type == "Point").pattern = new RealTimeMap.PointIcon
         {
             iconUrl = "https://cdn-icons-png.flaticon.com/512/252/252025.png",
-            iconSize = [32,32],
-            iconAnchor = [16,16],
+            iconSize = [32, 32],
+            iconAnchor = [16, 16],
         };
+    }
+
+    private async Task Upload(RealTimeMap rtm)
+    {
+        if (rtm != null)
+        {
+            await rtm.Geometric.Points.upload([new RealTimeMap.StreamPoint
+            {
+                latitude = Lat,
+                longitude = Lon,
+                type = "Point"
+            }]);
+        }
     }
 }
