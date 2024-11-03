@@ -2,6 +2,7 @@
 using GD.Api.DB;
 using GD.Api.DB.Models;
 using GD.Shared.Request;
+using GD.Shared.Response;
 using Mapster;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,7 +40,22 @@ public class FeedbackController : CustomController
         
         return Ok(feedback);
     }
-    
+
+
+    [HttpGet("feedback/{productId:guid}")]
+    [AllowAnonymous] // Или используйте свою логику авторизации
+    public async Task<IActionResult> GetFeedbacks(Guid productId)
+    {
+        var feedbacks = await _appDbContext.Feedbacks
+            .Where(f => f.ProductId == productId)
+            .Select(f => new FeedbackResponse { ClientId = f.ClientId, CreatedAt = f.CreatedAt,
+                Id = f.Id, ProductId = f.ProductId, Stars = f.Stars, Text = f.Text})
+            .ToListAsync();
+
+        return Ok(feedbacks);
+    }
+
+
     [HttpDelete("feedback/{id:guid}")]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "admin")]
     public async Task<IActionResult> RemoveFeedback([FromRoute] Guid id)

@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GD.ServiceDefaults", "GD.Se
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GD.Api", "GD.Api\GD.Api.csproj", "{229C2755-A30B-4A2B-9609-DE9B39EE5A33}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GD.Shared", "GD.Shared\GD.Shared.csproj", "{F5AB1288-2066-41BD-BCA2-0A4632CBF691}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GD.Shared", "GD.Shared\GD.Shared.csproj", "{F5AB1288-2066-41BD-BCA2-0A4632CBF691}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

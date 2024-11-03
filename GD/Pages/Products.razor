@@ -21,7 +21,7 @@
                 <MudText Class="product-name" Typo="Typo.h6">@product.Name</MudText>
                 <MudText Typo="Typo.body2">@product.Description</MudText>
                 <MudText Typo="Typo.body2"><strong>Теги:</strong> @product.Tags</MudText>
-                <MudText Typo="Typo.body1" Class="product-price">@product.Price$</MudText>
+                <MudText Typo="Typo.body1" Class="product-price">@product.Price руб</MudText>
             </MudCardContent>
             <MudCardActions>
                 <MudButton OnClick="() => AddToOrder(product.Id)"
@@ -64,6 +64,7 @@ private IEnumerable<Request> FilteredProducts => selectedTag == ""
                               .ToList();
     }
 
+
     private async Task AddToOrder(Guid id)
     {
         if (!await _ls.ContainKeyAsync("JWT"))
@@ -71,7 +72,35 @@ private IEnumerable<Request> FilteredProducts => selectedTag == ""
             _nm.NavigateTo("/login");
         }
 
-        // существующая логика добавления в заказ...
+        Guid orderId;
+        var jwt = await _ls.GetItemAsStringAsync("JWT");
+
+        var client = _httpClientFactory.CreateClient("api");
+
+        if (await _ls.ContainKeyAsync("order"))
+        {
+            orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
+        }
+        else
+        {
+            var openRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Order/open");
+            openRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+            var openResponse = await client.SendAsync(openRequest);
+            var data = await openResponse.Content.ReadFromJsonAsync<Response>();
+            orderId = data!.Id;
+            await _ls.SetItemAsStringAsync("order", orderId.ToString());
+        }
+
+        var addRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Order/add");
+        addRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+        addRequest.Content = JsonContent.Create(new
+        {
+            OrderId = orderId,
+            ProductId = id,
+            Amount = 1
+        });
+
+        await client.SendAsync(addRequest);
     }
 
     private void OnTagChange(string newTag)
@@ -82,7 +111,7 @@ private IEnumerable<Request> FilteredProducts => selectedTag == ""
     private void LeaveReview(Guid productId)
     {
         // Логика для оставления отзыва (например, навигация на страницу отзыва)
-        _nm.NavigateTo($"/Review/{productId}");
+        _nm.NavigateTo($"/Feedback/{productId}");
     }
 
     class Request
