@@ -3,94 +3,88 @@
 @using GD.Shared.Common
 @using GD.Shared.Request
 @using GD.Shared.Response
+<h1>Админка</h1> 
 
-<h1>Adminka</h1>
-
-@if (isAdmin)
-{
-    <MudGrid>
-        <MudItem xs="6">
-            <h3>Create Product</h3>
-            <MudPaper Class="pa-4">
-                <MudForm>
-                    <MudTextField T="string"
-                                  InputType="InputType.Text"
-                                  Label="Name"
-                                  Required="true"
-                                  RequiredError="Name is required!"
+@if (isAdmin) 
+{ 
+    <MudGrid> 
+        <MudItem xs="6"> 
+            <h3>Добавление товара</h3> 
+            <MudPaper Class="pa-4"> 
+                <MudForm> 
+                    <MudTextField Variant="Variant.Outlined" T="string" 
+                                  InputType="InputType.Text" 
+                                  Label="Название" 
+                                  Required="true" 
+                                  RequiredError="Название обязательно!" 
                                   @bind-Text=@_request.Name/>
 
-                    <MudTextField T="string" Label="Description"
-                                  InputType="InputType.Text"
-                                  Required="true"
-                                  RequiredError="Description is required!"
-                                  @bind-Text=@_request.Description/>
+                    <MudTextField Variant="Variant.Outlined" T="string" Label="Описание"
+                                  InputType="InputType.Text" 
+                                  Required="true" 
+                                  RequiredError="Описание обязательно!" 
+                                  @bind-Text=@_request.Description/> 
 
-                    @* <MudTextField T="string" Label="ImageValue" *@
-                    @*               InputType="InputType.Text" *@
-                    @*               Required="true" *@
-                    @*               RequiredError="Description is required!" *@
-                    @*               @bind-Text=@_request.ImageValue/> *@
-                    @fileName
-                    <MudFileUpload T="IBrowserFile" Accept=".png" FilesChanged="UploadFiles">
-                        <ActivatorContent>
-                            <MudButton Variant="Variant.Filled"
-                                       Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.CloudUpload">
-                                Upload Files
-                            </MudButton>
-                        </ActivatorContent>
+                    <MudFileUpload T="IBrowserFile" Accept=".png" FilesChanged="UploadFiles"> 
+                        <ActivatorContent> 
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Primary" 
+                                       StartIcon="@Icons.Material.Filled.CloudUpload"> 
+                                Загрузить файлы 
+                            </MudButton> 
+                        </ActivatorContent> 
                     </MudFileUpload>
 
-                    <MudTextField T="double" Label="Price"
-                                  InputType="InputType.Number"
-                                  Required="true"
-                                  RequiredError="Description is required!"
+                    <MudTextField Variant="Variant.Outlined" T="double" Label="Цена"
+                                  InputType="InputType.Number" 
+                                  Required="true" 
+                                  RequiredError="Цена обязательна!" 
                                   @bind-Value=@_request.Price/>
 
-                    <MudTextField T="string" Label="Tags"
-                                  InputType="InputType.Text"
-                                  Required="true"
-                                  RequiredError="Description is required!"
+                    <MudTextField Variant="Variant.Outlined" T="string" Label="Теги"
+                                  InputType="InputType.Text" 
+                                  Required="true" 
+                                  RequiredError="Теги обязательны!" 
                                   @bind-Value=@_request.Tags/>
 
-                    <MudTextField T="double" Label="Amount"
-                                  InputType="InputType.Number"
-                                  Required="true"
-                                  RequiredError="Description is required!"
-                                  @bind-Value=@_request.Amount/>
+                    <MudTextField Variant="Variant.Outlined" T="double" Label="Количество"
+                                  InputType="InputType.Number" 
+                                  Required="true" 
+                                  RequiredError="Количество обязательно!" 
+                                  @bind-Value=@_request.Amount/> 
 
-                    <div class="d-flex align-center justify-space-between">
-                        <MudButton Variant="Variant.Filled" OnClick="AddProduct" Color="Color.Primary" Class="ml-auto">Register</MudButton>
-                    </div>
-                </MudForm>
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="6">
-            <MudButton Variant="Variant.Filled" class="nav-link" Href="/map" >
-                Карта
-            </MudButton>
-            <h3>Пользователи</h3>
-            <MudPaper Class="pa-4">
-                @foreach (var client in _clients)
-                {
-                    <MudCard>
-                        <MudText>Айди: @client.Id</MudText>
-                        <MudText>Почта: @client.Email</MudText>
-                        <MudText>Баланс: @client.Balance</MudText>
-                        <div class="d-flex align-center justify-space-between">
-                            <MudButton Variant="Variant.Filled" OnClick="() => MakeCourier(client.Id)" Color="Color.Primary" Class="ml-auto">Сделать Курьером</MudButton>
-                        </div>
-                    </MudCard>
-                }
+                    <div class="d-flex align-center justify-space-between"> 
+                        <MudButton Variant="Variant.Outlined" OnClick="AddProduct" Color="Color.Primary" Class="ml-auto">Добавить</MudButton> 
+                    </div> 
+                </MudForm> 
+            </MudPaper> 
+        </MudItem> 
+        <MudItem xs="6"> 
+            <MudButton Variant="Variant.Outlined" class="nav-link" Href="/map" > 
+                Карта 
+            </MudButton> 
+            <h3>Пользователи</h3> 
+            <MudPaper Class="pa-4"> 
+                @foreach (var client in _clients) 
+                { 
+                    <MudCard> 
+                        <MudText>Айди: @client.Id</MudText> 
+                        <MudText>Почта: @client.Email</MudText> 
+                        <MudText>Баланс: @client.Balance</MudText> 
+                        <div class="d-flex align-center justify-space-between"> 
+                            <MudButton Variant="Variant.Outlined" OnClick="() => MakeCourier(client.Id)" Color="Color.Primary" Class="ml-auto">Сделать курьером</MudButton> 
+                        </div> 
+                    </MudCard> 
+                } 
             </MudPaper>
         </MudItem>
     </MudGrid>
 }
 else
 {
-    <h1>You are not admin</h1>
+    <h1>Вы не администратор</h1>
 }
+
 
 @code {
     readonly Request _request = new();
