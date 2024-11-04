@@ -1,62 +1,79 @@
-﻿@page "/Basket"
-@using System.Net.Http.Headers
-@using GD.Shared.Common
-@using GD.Shared.Request
-<h3>Basket</h3>
+﻿@page "/Basket" 
+@using System.Net.Http.Headers 
+@using GD.Shared.Common 
+@using GD.Shared.Request 
 
-@if (isClient)
-{
-    @foreach (var response in _responses)
-    {
-        if(response.Status != GDOrderStatuses.Delivered)
-        {
-            <h3>Status: @response!.Status</h3>
-            
-            if (response.Status == GDOrderStatuses.Selecting)
-            {
-                <MudPaper Class="pa-4">
-                    <MudForm>
-                        <MudSelect T="string" @bind-Value=payMethod>
-                            <MudSelectItem Value="GDPayMethods.Online"></MudSelectItem>
-                            <MudSelectItem Value="GDPayMethods.BankCard"></MudSelectItem>
-                            <MudSelectItem Value="GDPayMethods.Cash"></MudSelectItem>
-                        </MudSelect>
+<h3>Ваши Заказы</h3> 
 
-                        <MudTextField T="string"
-                                      InputType="InputType.Text"
-                                      Label="Адрес доставки"
-                                      Required="true"
-                                      RequiredError="address is required!"
-                                      @bind-Text=@toAddress />
-                        <div class="d-flex align-center justify-space-between">
-                            <MudButton Variant="Variant.Filled" OnClick="() => CompleteOrder(response.Id)"
-                                       Color="Color.Primary" Class="ml-auto">Подтвердить</MudButton>
-                        </div>
-                    </MudForm>
-                </MudPaper>
-            }
-           
-            
-            @foreach (var product in response!.Products)
-            {
+@if (isClient) 
+{ 
+    @foreach (var response in _responses) 
+    { 
+        if (response.Status != GDOrderStatuses.Delivered) 
+        { 
+            <MudPaper Class="pa-4 mb-4 shadow-2"> 
+                <MudText Typography="Typo.h6" Class="mb-2">Статус: <strong>@response!.Status</strong></MudText> 
 
-                <MudCard>
-                    <MudCardContent>
-                    @*     <img width="400" src="data:image/png;base64, @product.ImageValue" alt="Red dot" />  *@            
-                        <MudText Typo="Typo.h5">@product.Name</MudText>
-                        <MudText Typo="Typo.body2">@product.Description</MudText>
-                        <MudText Typo="Typo.caption"># @product.Tags</MudText>
-                        <MudText Typo="Typo.body2">@product.Price руб</MudText>
-                    </MudCardContent>
-                </MudCard>
-            }
+                @if (response.Status == GDOrderStatuses.Selecting) 
+                { 
+                    <MudForm Class="mb-4"> 
+                        <MudSelect Variant=Variant.Outlined T="string" @bind-Value=payMethod Label="Способ оплаты" Required="true"> 
+                            <MudSelectItem Value="GDPayMethods.Online">Онлайн</MudSelectItem> 
+                            <MudSelectItem Value="GDPayMethods.BankCard">Банковская карта</MudSelectItem> 
+                            <MudSelectItem Value="GDPayMethods.Cash">Наличными</MudSelectItem> 
+                        </MudSelect> 
+
+                        <MudTextField 
+                            Variant="Variant.Outlined"
+                            T="string" 
+                            InputType="InputType.Text" 
+                            Label="Адрес доставки" 
+                            Required="true" 
+                            RequiredError="Адрес обязательно!" 
+                            @bind-Text=@toAddress /> 
+                        
+                        <div class="d-flex align-center justify-space-between mt-2"> 
+                            <MudButton Variant="Variant.Filled" OnClick="() => CompleteOrder(response.Id)" 
+                                       Color="Color.Primary" Class="ml-auto">Подтвердить</MudButton> 
+                        </div> 
+                    </MudForm> 
+                } 
+
+                <MudText Typography="Typo.subtitle1" Class="mt-4">Содержимое заказа:</MudText>
+
+                <MudGrid Justify="Justify.Center">
+                    @foreach (var productGroup in response!.Products.GroupBy(p => p.Name))
+                    { 
+                        var product = productGroup.First(); // получаем продукт из группы
+                        var quantity = productGroup.Count(); // считаем количество одинаковых продуктов
+
+                        <MudItem xs="12" sm="6" md="4" Class="d-flex justify-center"> <!-- Центрируем продукты -->
+                            <MudCard Class="mb-4" Style="text-align: center;"> 
+                                @if (!string.IsNullOrEmpty(product.ImageValue)) 
+                                { 
+                                    <img class="img-fluid" src="data:image/png;base64, @product.ImageValue" alt="Изображение продукта" /> 
+                                } 
+                                <MudCardContent> 
+                                    <MudText Typo="Typo.h5">@product.Name</MudText> 
+                                    <MudText Typo="Typo.body2">@product.Description</MudText> 
+                                    <MudText Typo="Typo.caption"># @product.Tags</MudText> 
+                                    <MudText Typography="Typo.h6" Color="Color.Primary">@product.Price руб</MudText> 
+                                    <MudText Typography="Typo.subtitle2">Количество: @quantity</MudText> <!-- Отображаем количество -->
+                                </MudCardContent>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
         }
     }
 }
 else
 {
-    <h2>Your are not customer</h2>
+    <h2 class="text-danger">Вы не клиент</h2>
 }
+
+
 
 @code {
     bool isClient = false;
@@ -126,3 +143,8 @@ else
         }
     }
 }
+
+<style>
+
+
+</style>

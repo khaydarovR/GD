@@ -1,4 +1,5 @@
-﻿@inherits LayoutComponentBase
+﻿@using GD.Shared.Common
+@inherits LayoutComponentBase
 @* Required *@
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -16,7 +17,8 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <MudButton>@authMessage</MudButton>
+            <MudText>@role</MudText>
         </div>
 
         <article class="content px-4">
@@ -24,3 +26,30 @@
         </article>
     </main>
 </div>
+
+@code{
+    string authMessage = "";
+    string role = "";
+    protected override async Task OnInitializedAsync()
+    {
+        await GetClaimsPrincipalData();
+    }
+
+    private async Task GetClaimsPrincipalData()
+    {
+        var authState = await _auth
+            .GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
+            authMessage = $"{user.Identity.Name}";
+            var claims = user.Claims;
+            role = claims.FirstOrDefault(c => c.Type == GDUserClaimTypes.Roles)!.Value;
+        }
+        else
+        {
+            authMessage = "Вход";
+        }
+    }
+}

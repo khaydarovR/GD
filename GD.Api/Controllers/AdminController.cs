@@ -41,4 +41,11 @@ public class AdminController : CustomController
                 user.PosLong
             }).ToListAsync());
     }
+
+    [HttpGet("allusers")]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var r = await _appDbContext.Users.ToListAsync();
+        return Ok(r);
+    }
 }

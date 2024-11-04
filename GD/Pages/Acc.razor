@@ -17,8 +17,10 @@
                 <MudText>Роль: @role</MudText>
                 <MudText>Баланс: @_user.Balance$</MudText>
                 <MudText>Адрес: @_user.Address</MudText>
-                <MudText>Longitude: @_user.PosLong</MudText>
-                <MudText>Latitude: @_user.PosLati</MudText>
+
+                <MudTextField Label="Longitude" Immediate @bind-Text=@longpos></MudTextField>
+                <MudTextField Label="Latitude" Immediate @bind-Text=@latipos></MudTextField>
+
             </MudList>
         </MudPaper>
     </MudItem>
@@ -63,6 +65,9 @@
 </MudList>
 
 @code {
+    string latipos;
+    string longpos;
+
     private string? authMessage;
     private string? surname;
     private string role = "";
@@ -70,10 +75,16 @@
     Location location = new();
     User _user = new();
     int amount = 0;
-    
+
     protected override async Task OnInitializedAsync()
     {
         await GetClaimsPrincipalData();
+        var result = await _geolocationService.GetCurrentPosition();
+
+        location.PosLati = result.Position.Coords.Latitude;
+        location.PosLong = result.Position.Coords.Longitude;
+        latipos = location.PosLati.ToString();
+        longpos = location.PosLong.ToString();
     }
 
     private async Task GetClaimsPrincipalData()
@@ -100,11 +111,11 @@
         var result = await _geolocationService.GetCurrentPosition();
         if (result.IsSuccess)
         {
-            location.PosLati = result.Position.Coords.Latitude;
-            location.PosLong = result.Position.Coords.Longitude;
+            location.PosLati = string.IsNullOrEmpty(latipos) ? location.PosLati : double.Parse(latipos);
+            location.PosLong = string.IsNullOrEmpty(longpos) ? location.PosLong : double.Parse(longpos);
             _user.Address = location.Address;
-            _user.PosLati = location.PosLati;
-            _user.PosLong = location.PosLong;
+            _user.PosLati = string.IsNullOrEmpty(latipos) ? location.PosLati: double.Parse(latipos);
+            _user.PosLong = string.IsNullOrEmpty(longpos) ? location.PosLong: double.Parse(longpos) ;
             await _http.PostAsync<Location, Unit>("/api/Client/location", location);
             _snakbar.Add("Изменено успешно");
         }
