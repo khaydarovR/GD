@@ -1,6 +1,7 @@
 ﻿@page "/map"
+@using GD.Shared.Common
 @using LeafletForBlazor
-@inject HttpClient Http  // Inject HttpClient to make API calls
+@inject HttpClient Http
 
 <h3>Карта</h3>
 
@@ -12,7 +13,6 @@
 @code {
     RealTimeMap _realTimeMap = new();
     List<GDUserLocation> users = new();  // List to store users
-
 
     private async Task Callback()
     {
@@ -34,9 +34,6 @@
         //Appearence(_realTimeMap);
     }
 
-
-
-
     private async Task LoadUserLocations(RealTimeMap rtm)
     {
         await GetAllUsers();  // Fetch all users
@@ -47,13 +44,26 @@
                 {
                     latitude = user.PosLati,
                     longitude = user.PosLong,
-                    type = "Point"
+                    type = user.Role
                 }).ToList();
+
+        rtm.Geometric.Points.AppearanceOnType(item => item.type == GDUserRoles.Client)
+            .pattern = new RealTimeMap.PointSymbol()
+        {
+            radius = 10,
+            fillColor = "green"
+        };
+
+        rtm.Geometric.Points.AppearanceOnType(item => item.type == GDUserRoles.Courier)
+            .pattern = new RealTimeMap.PointSymbol()
+        {
+            radius = 10,
+            fillColor = "blue"
+        };
 
         await rtm.Geometric.Points.upload(streamPoints, true);
         //Appearence(_realTimeMap);
     }
-
 
     private async Task GetAllUsers()
     {
@@ -71,6 +81,7 @@
         public double Balance { get; set; }
         public double PosLati { get; set; }
         public double PosLong { get; set; }
+        public string Role { get; set; }
     }
 }
 

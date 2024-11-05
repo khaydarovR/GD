@@ -45,7 +45,19 @@ public class AdminController : CustomController
     [HttpGet("allusers")]
     public async Task<IActionResult> GetAllUsers()
     {
-        var r = await _appDbContext.Users.ToListAsync();
+        var r =  await (from user in _appDbContext.Users
+            join userRole in _appDbContext.UserRoles on user.Id equals userRole.UserId
+            join role in _appDbContext.Roles on userRole.RoleId equals role.Id
+            select new
+            {
+                user.Id,
+                user.Email,
+                user.Balance,
+                user.PosLati,
+                user.PosLong,
+                Role = role.Name
+            }).ToListAsync();
+
         return Ok(r);
     }
 }
