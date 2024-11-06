@@ -32,6 +32,8 @@ namespace GD.Api.DB.Models
         public double TotalPrice { get; set; }
         public string? Status { get; set; }
         public Guid? CourierId { get; set; }
+        [JsonIgnore]
+        public GDUser Courier { get; set; }
 
         public ICollection<OrderItem> OrderItems { get; set; }
     }

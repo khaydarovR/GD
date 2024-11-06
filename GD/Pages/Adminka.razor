@@ -62,7 +62,14 @@
         <MudItem xs="6"> 
             <MudButton Variant="Variant.Outlined" class="nav-link" Href="/map" > 
                 Карта 
-            </MudButton> 
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" class="nav-link" Href="/dashboard">
+                Отчеты
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" class="nav-link" Href="/order-history">
+                Заказы
+            </MudButton>
+
             <h3>Пользователи</h3> 
             <MudPaper Class="pa-4"> 
                 @foreach (var client in _clients) 
@@ -94,21 +101,18 @@ else
 
     async Task AddProduct()
     {
-        using var client = _httpClientFactory.CreateClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, "api/product");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
         request.Content = JsonContent.Create(_request);
-        var response = await client.SendAsync(request);
+        var response = await _client.SendAsync(request);
 
         var result = await response.Content.ReadFromJsonAsync<Response>();
 
         if (imageData != null)
         {
             var imageRequest = new HttpRequestMessage(HttpMethod.Post, $"api/product/image?id={result!.Id}");
-            imageRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
             imageRequest.Content = new ByteArrayContent(imageData);
-            imageRequest.Content.Headers.ContentType = new MediaTypeHeaderValue(fileType);
-            var response2 = await client.SendAsync(imageRequest);
+            var response2 = await _client.SendAsync(imageRequest);
             if (response2.IsSuccessStatusCode)
             {
                 _snakbar.Add("Изображение добавлено");
@@ -175,12 +179,11 @@ else
 
     private async Task MakeCourier(Guid clientId)
     {
-        using var client = _httpClientFactory.CreateClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, "/api/Courier/new");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
         request.Content = JsonContent.Create(new { clientId });
         _clients.RemoveAll(c => c.Id == clientId);
-        await client.SendAsync(request);
+        await _client.SendAsync(request);
     }
 
     string fileName = "";
@@ -197,14 +200,5 @@ else
         fileType = arg.ContentType;
     }
 
-    private async Task GetLocation(double clientPosLati, double clientPosLong)
-    {
-        var parameters = new DialogParameters<Dialog>
-        {
-            { x => x.Lat, clientPosLati },
-            { x => x.Lon, clientPosLong },
-        };
-        
-        await _dialog.ShowAsync<Dialog>("", parameters, new DialogOptions() {});
-    }
+
 }

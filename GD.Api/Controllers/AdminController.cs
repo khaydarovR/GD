@@ -19,11 +19,7 @@ public class AdminController : CustomController
         _appDbContext = appDbContext;
     }
 
-    [HttpGet("dashboard")]
-    public async Task<IActionResult> GetOrdersDashboard()
-    {
-        return Ok(_appDbContext.Orders.Where(o => o.Status == "Waiting" || o.Status == "In delivery"));
-    }
+
 
     [HttpGet("users")]
     public async Task<IActionResult> GetAllClients()

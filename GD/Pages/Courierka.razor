@@ -39,10 +39,9 @@ else
 
     private async Task TakeOrder(Guid id)
     {
-        using var client = _httpClientFactory.CreateClient("api");
         var request = new HttpRequestMessage(HttpMethod.Post, $"api/order/take?id={id}");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
-        var response = await client.SendAsync(request);
+        var response = await _client.SendAsync(request);
     }
     
     protected override async Task OnInitializedAsync()
@@ -54,10 +53,9 @@ else
 
         if (isCourier)
         {
-            using var client = _httpClientFactory.CreateClient("api");
             var request = new HttpRequestMessage(HttpMethod.Get, "api/order/waiting");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
-            var response = await client.SendAsync(request);
+            var response = await _client.SendAsync(request);
             _responses = await response.Content.ReadFromJsonAsync<List<Response>>() ?? new();
         }
 

@@ -5,19 +5,18 @@ namespace GD.Services;
 
 public class UserService
 {
-    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly HttpClient _client;
 
-    public UserService(IHttpClientFactory httpClientFactory)
+    public UserService(HttpClient httpClientFactory)
     {
-        _httpClientFactory = httpClientFactory;
+        _client = httpClientFactory;
     }
 
     public async Task<Response> GetInfo(string jwt)
     {
-        using var client = _httpClientFactory.CreateClient("api");
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/auth/info");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
-        var response = await client.SendAsync(request);
+        var response = await _client.SendAsync(request);
         return (await response.Content.ReadFromJsonAsync<Response>())!;
     }
 }

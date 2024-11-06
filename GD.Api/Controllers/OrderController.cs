@@ -29,6 +29,7 @@ public class OrderController : CustomController
     {
         var order = new Order
         {
+            CreatedAt = DateTime.Now,
             Status = GDOrderStatuses.Selecting,
             ClientId = ContextUserId
         };

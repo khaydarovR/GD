@@ -47,13 +47,13 @@
     private List<string> uniqueTags = new List<string>();
     private string selectedTag = ""; // Выбранный тег
 
-private IEnumerable<Request> FilteredProducts => selectedTag == "" 
-        ? _products 
-        : _products.Where(p => p.Tags.Contains(selectedTag));
+    private IEnumerable<Request> FilteredProducts => selectedTag == "" 
+            ? _products 
+            : _products.Where(p => p.Tags.Contains(selectedTag));
 
     protected override async Task OnInitializedAsync()
     {
-        var client = _httpClientFactory.CreateClient("api");
+        var client = _client;
         var response = await client.GetAsync("api/product");
         _products = await response.Content.ReadFromJsonAsync<List<Request>>() ?? [];
 
@@ -75,7 +75,7 @@ private IEnumerable<Request> FilteredProducts => selectedTag == ""
         Guid orderId;
         var jwt = await _ls.GetItemAsStringAsync("JWT");
 
-        var client = _httpClientFactory.CreateClient("api");
+        var client = _client;
 
         if (await _ls.ContainKeyAsync("order"))
         {

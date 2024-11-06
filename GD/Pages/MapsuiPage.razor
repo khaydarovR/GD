@@ -1,0 +1,134 @@
+﻿@using Mapsui
+@using Mapsui.Extensions
+@using Mapsui.Layers
+@using Mapsui.Nts
+@using Mapsui.Projections
+@using Mapsui.Styles
+@using Mapsui.UI.Blazor
+@using Mapsui.Widgets
+@using NetTopologySuite.Geometries
+
+
+@page "/map2"
+
+@inject HttpClient Http  // Inject HttpClient to make API calls
+
+<div class="ma-0 pa-0 canvas-container">
+    <MapControlComponent @ref="_mapControl" />
+</div>
+
+
+@code {
+    private MapControl? _mapControl;
+    private Map? map;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetAllUsers();
+        await AddUserMarks();
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            if (_mapControl != null)
+            {
+                _mapControl.Map?.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
+                map = _mapControl.Map;
+                map.Info += MapOnInfo;
+
+                map.Widgets.Add(new MapInfoWidget(map));
+
+                // Get the lon lat coordinates from somewhere (Mapsui can not help you there)
+                var centerOfLondonOntario = new MPoint(52.3997, 55.7037);
+                // OSM uses spherical mercator coordinates. So transform the lon lat coordinates to spherical mercator
+                var sphericalMercatorCoordinate = SphericalMercator.FromLonLat(centerOfLondonOntario.X, centerOfLondonOntario.Y).ToMPoint();
+                // Set the center of the viewport to the coordinate. The UI will refresh automatically
+                // Additionally you might want to set the resolution, this could depend on your specific purpose
+                map.Home = n => n.CenterOnAndZoomTo(sphericalMercatorCoordinate, n.Resolutions[12]);
+            }
+
+        }
+    }
+
+    List<GDUserLocation> users = new();  // List to store users
+
+    async Task AddUserMarks()
+    {
+        var layer = new GenericCollectionLayer<List<IFeature>>
+            {
+                Style = SymbolStyles.CreatePinStyle(),
+                Name = "Cities with callouts",
+                IsMapInfoLayer = true,
+            };
+        map.Layers.Add(layer);
+
+        foreach (var u in users)
+        {
+            if (u.PosLong != default)
+            {
+                // Изменение местами широты и долготы
+                var feature = new PointFeature(SphericalMercator.FromLonLat(u.PosLong, u.PosLati).ToMPoint());
+                feature["E"] = u.Email;
+                feature.Styles.Add(CreateCalloutStyle(feature.ToStringOfKeyValuePairs()));
+
+                Console.WriteLine(u.PosLong + " " + u.PosLati);
+                layer?.Features.Add(feature);
+            }
+        }
+        layer?.DataHasChanged();
+
+    }
+
+    private static CalloutStyle CreateCalloutStyle(string content)
+    {
+        return new CalloutStyle
+            {
+                Title = content,
+                TitleFont = { FontFamily = null, Size = 12, Italic = false, Bold = true },
+                TitleFontColor = new Mapsui.Styles.Color(0, 0, 0),
+                MaxWidth = 120,
+                RectRadius = 10,
+                ShadowWidth = 4,
+                Enabled = false,
+                SymbolOffset = new Offset(0, SymbolStyle.DefaultHeight * 1f)
+            };
+    }
+
+    private static void MapOnInfo(object? sender, MapInfoEventArgs e)
+    {
+        var calloutStyle = e.MapInfo?.Feature?.Styles.Where(s => s is CalloutStyle).Cast<CalloutStyle>().FirstOrDefault();
+        if (calloutStyle != null)
+        {
+            calloutStyle.Enabled = !calloutStyle.Enabled;
+            e.MapInfo?.Layer?.DataHasChanged(); // To trigger a refresh of graphics.
+        }
+    }
+
+    private async Task GetAllUsers()
+    {
+        var response = await Http.GetAsync("api/admin/allusers");  // API path to get all users
+        response.EnsureSuccessStatusCode();
+
+        users = await response.Content.ReadFromJsonAsync<List<GDUserLocation>>() ?? new();  // Deserialize response
+    }
+
+    // Define a DTO to map the user data
+    public class GDUserLocation
+    {
+        public Guid Id { get; set; }
+        public string Email { get; set; }
+        public double Balance { get; set; }
+        public double PosLati { get; set; }
+        public double PosLong { get; set; }
+    }
+}
+
+<style>
+    .canvas-container canvas {
+        width: 100%;
+        height: 80vh;
+    }
+</style>

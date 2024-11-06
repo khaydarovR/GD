@@ -94,7 +94,7 @@ else
             if(await _ls.ContainKeyAsync("order")) 
                 orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
 
-            var client = _httpClientFactory.CreateClient("api");
+            var client = _client;
             var request = new HttpRequestMessage(HttpMethod.Get, $"/api/Client/basket");
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
             var response = await client.SendAsync(request);
@@ -125,7 +125,7 @@ else
 
     private async Task CompleteOrder(Guid orderId)
     {
-        var client = _httpClientFactory.CreateClient("api");
+        var client = _client;
         var request = new HttpRequestMessage(HttpMethod.Post, $"/api/Order/completewithdefault");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await _ls.GetItemAsStringAsync("JWT"));
         OrderRequestWithDefault requestWithDefault = new OrderRequestWithDefault

@@ -167,6 +167,7 @@ var app = builder.Build();
         
         var order = new Order
         {
+            CreatedAt = DateTime.UtcNow,
             Status = "Waiting",
             ClientId = UserId.Value,
             PayMethod = "online",
