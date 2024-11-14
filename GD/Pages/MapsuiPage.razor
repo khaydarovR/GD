@@ -1,90 +1,120 @@
-﻿@using Mapsui
-@using Mapsui.Extensions
-@using Mapsui.Layers
-@using Mapsui.Nts
-@using Mapsui.Projections
-@using Mapsui.Styles
-@using Mapsui.UI.Blazor
-@using Mapsui.Widgets
-@using NetTopologySuite.Geometries
+﻿@using Mapsui 
+@using Mapsui.Extensions 
+@using Mapsui.Layers 
+@using Mapsui.Nts 
+@using Mapsui.Projections 
+@using Mapsui.Styles 
+@using Mapsui.UI.Blazor 
+@using Mapsui.Widgets 
+@using NetTopologySuite.Geometries 
+@using static GD.Pages.MapPage
 
+@implements IDisposable
 
-@page "/map2"
+@page "/map2" 
 
-@inject HttpClient Http  // Inject HttpClient to make API calls
+@inject HttpClient Http  // Inject HttpClient to make API calls 
 
-<div class="ma-0 pa-0 canvas-container">
-    <MapControlComponent @ref="_mapControl" />
-</div>
+<div class="ma-0 pa-0 canvas-container"> 
+    <MapControlComponent @ref="_mapControl" /> 
+</div> 
 
+@code { 
+    private MapControl? _mapControl; 
+    private Map? map; 
+    private System.Timers.Timer? _timer; 
 
-@code {
-    private MapControl? _mapControl;
-    private Map? map;
+    protected override async Task OnInitializedAsync() 
+    { 
+        await InitializeMap();
+        StartTimer(); // Start the timer to fetch data
+    } 
 
-    protected override async Task OnInitializedAsync()
+    protected override async void OnAfterRender(bool firstRender) 
+    { 
+        base.OnAfterRender(firstRender); 
+        if (firstRender) 
+        { 
+            SetupMap(); 
+        } 
+    } 
+
+    private async Task InitializeMap()
     {
-        await GetAllUsers();
-        await AddUserMarks();
+        await GetAllUsers(); 
+        await AddUserMarks(); 
     }
 
-    protected override async void OnAfterRender(bool firstRender)
+    private void StartTimer()
     {
-        base.OnAfterRender(firstRender);
-        if (firstRender)
+        _timer = new System.Timers.Timer(5000); // Set timer to 5 seconds
+        _timer.Elapsed += async (sender, e) => await OnTimerElapsed();
+        _timer.AutoReset = true; 
+        _timer.Enabled = true; 
+    }
+
+    private async Task OnTimerElapsed()
+    {
+        if (_mapControl != null)
         {
-            if (_mapControl != null)
-            {
-                _mapControl.Map?.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer());
-                map = _mapControl.Map;
-                map.Info += MapOnInfo;
-
-                map.Widgets.Add(new MapInfoWidget(map));
-
-                // Get the lon lat coordinates from somewhere (Mapsui can not help you there)
-                var centerOfLondonOntario = new MPoint(52.3997, 55.7037);
-                // OSM uses spherical mercator coordinates. So transform the lon lat coordinates to spherical mercator
-                var sphericalMercatorCoordinate = SphericalMercator.FromLonLat(centerOfLondonOntario.X, centerOfLondonOntario.Y).ToMPoint();
-                // Set the center of the viewport to the coordinate. The UI will refresh automatically
-                // Additionally you might want to set the resolution, this could depend on your specific purpose
-                map.Home = n => n.CenterOnAndZoomTo(sphericalMercatorCoordinate, n.Resolutions[12]);
-            }
-
+            await GetAllUsers();
+            await AddUserMarks();
         }
     }
 
-    List<GDUserLocation> users = new();  // List to store users
-
-    async Task AddUserMarks()
+    void IDisposable.Dispose()
     {
-        var layer = new GenericCollectionLayer<List<IFeature>>
-            {
-                Style = SymbolStyles.CreatePinStyle(),
-                Name = "Cities with callouts",
-                IsMapInfoLayer = true,
-            };
-        map.Layers.Add(layer);
-
-        foreach (var u in users)
-        {
-            if (u.PosLong != default)
-            {
-                // Изменение местами широты и долготы
-                var feature = new PointFeature(SphericalMercator.FromLonLat(u.PosLong, u.PosLati).ToMPoint());
-                feature["E"] = u.Email;
-                feature.Styles.Add(CreateCalloutStyle(feature.ToStringOfKeyValuePairs()));
-
-                Console.WriteLine(u.PosLong + " " + u.PosLati);
-                layer?.Features.Add(feature);
-            }
-        }
-        layer?.DataHasChanged();
-
+        _timer?.Stop(); // Stop the timer
+        _timer?.Dispose(); // Dispose the timer
     }
 
-    private static CalloutStyle CreateCalloutStyle(string content)
+    private async Task SetupMap()
     {
-        return new CalloutStyle
+        if (_mapControl != null) 
+        { 
+            _mapControl.Map?.Layers.Add(Mapsui.Tiling.OpenStreetMap.CreateTileLayer()); 
+            map = _mapControl.Map; 
+            map.Info += MapOnInfo; 
+
+            map.Widgets.Add(new MapInfoWidget(map)); 
+
+            var centerOfLondonOntario = new MPoint(52.3997, 55.7037); 
+            var sphericalMercatorCoordinate = SphericalMercator.FromLonLat(centerOfLondonOntario.X, centerOfLondonOntario.Y).ToMPoint(); 
+            map.Home = n => n.CenterOnAndZoomTo(sphericalMercatorCoordinate, n.Resolutions[12]); 
+        } 
+    } 
+
+    List<GDUserLocation> users = new();  // List to store users 
+
+    async Task AddUserMarks() 
+    { 
+        var layer = new GenericCollectionLayer<List<IFeature>> 
+            { 
+                Style = SymbolStyles.CreatePinStyle(), 
+                Name = "Cities with callouts", 
+                IsMapInfoLayer = true, 
+            }; 
+        map.Layers.Add(layer); 
+
+        layer.Features.Clear(); // Clear existing features before adding new ones
+
+        foreach (var u in users) 
+        { 
+            if (u.PosLong != default) 
+            { 
+                var feature = new PointFeature(SphericalMercator.FromLonLat(u.PosLong, u.PosLati).ToMPoint()); 
+                feature["E"] = u.Email; 
+                feature.Styles.Add(CreateCalloutStyle(feature.ToStringOfKeyValuePairs())); 
+
+                layer.Features.Add(feature); 
+            } 
+        } 
+        layer.DataHasChanged(); 
+    } 
+
+    private static CalloutStyle CreateCalloutStyle(string content) 
+    { 
+        return new CalloutStyle 
             {
                 Title = content,
                 TitleFont = { FontFamily = null, Size = 12, Italic = false, Bold = true },
@@ -109,26 +139,8 @@
 
     private async Task GetAllUsers()
     {
-        var response = await Http.GetAsync("api/admin/allusers");  // API path to get all users
+        var response = await Http.GetAsync("api/admin/allusers");
         response.EnsureSuccessStatusCode();
-
-        users = await response.Content.ReadFromJsonAsync<List<GDUserLocation>>() ?? new();  // Deserialize response
-    }
-
-    // Define a DTO to map the user data
-    public class GDUserLocation
-    {
-        public Guid Id { get; set; }
-        public string Email { get; set; }
-        public double Balance { get; set; }
-        public double PosLati { get; set; }
-        public double PosLong { get; set; }
+        users = await response.Content.ReadFromJsonAsync<List<GDUserLocation>>() ?? new List<GDUserLocation>();
     }
 }
-
-<style>
-    .canvas-container canvas {
-        width: 100%;
-        height: 80vh;
-    }
-</style>
