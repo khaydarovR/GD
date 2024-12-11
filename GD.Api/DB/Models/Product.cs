@@ -11,7 +11,7 @@ namespace GD.Api.DB.Models
         public double Price { get; set; }
         public string Tags { get; set; }
         public int Amount { get; set; }
-
+        public bool IsDeleted { get; set; }
         public List<Feedback> Feedbacks { get;set;}
     }
 

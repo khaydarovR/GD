@@ -1,6 +1,9 @@
 ﻿@page "/Products"
 @using System.Net.Http.Headers
+@using GD.Shared.Common
+@using GD.Shared.Request
 @using MudBlazor
+@using System.Security.Claims
 
 <h3>Продукты</h3>
 
@@ -15,27 +18,50 @@
 <div class="product-card-container">
     @foreach (var product in FilteredProducts)
     {
-        <MudCard Class="product-card">
-            <MudCardContent>
-                <img class="product-image" src="data:image/png;base64, @product.ImageValue" alt="Изображение продукта" />
-                <MudText Class="product-name" Typo="Typo.h6">@product.Name</MudText>
-                <MudText Typo="Typo.body2">@product.Description</MudText>
-                <MudText Typo="Typo.body2"><strong>Теги:</strong> @product.Tags</MudText>
-                <MudText Typo="Typo.body1" Class="product-price">@product.Price руб</MudText>
-            </MudCardContent>
-            <MudCardActions>
-                <MudButton OnClick="() => AddToOrder(product.Id)"
-                           Variant="Variant.Text"
-                           Color="MudBlazor.Color.Primary">
-                    Добавить в заказ
-                </MudButton>
-                <MudButton OnClick="() => LeaveReview(product.Id)"
-                           Variant="Variant.Text"
-                           Color="MudBlazor.Color.Secondary">
-                    Оставить отзыв
-                </MudButton>
-            </MudCardActions>
-        </MudCard>
+        if (product.IsDeleted && user.IsInRole(GDUserRoles.Admin) == false)
+        {
+            
+        }
+        else
+        {
+            <MudCard Class="product-card">
+                <MudCardContent>
+                    <img class="product-image" src="data:image/png;base64, @product.ImageValue" alt="Изображение продукта" />
+                    <MudText Class="product-name" Typo="Typo.h6">
+                        @product.Name
+                        @if (user.IsInRole(GDUserRoles.Admin))
+                        {
+                            if (product.IsDeleted)
+                            {
+                                <MudChip T=string Color="Color.Warning">Удален</MudChip>
+                            }
+                            else
+                            {
+                                <MudIconButton Color="Color.Error" Icon="@Icons.Material.Outlined.Delete"
+                                               OnClick="() => SoftDeleteProduct(product)"></MudIconButton>
+                            }
+
+                        }
+
+                    </MudText>
+                    <MudText Typo="Typo.body2">@product.Description</MudText>
+                    <MudText Typo="Typo.body2"><strong>Теги:</strong> @product.Tags</MudText>
+                    <MudText Typo="Typo.body1" Class="product-price">@product.Price руб</MudText>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton OnClick="() => AddToOrder(product.Id)"
+                               Variant="Variant.Text"
+                               Color="MudBlazor.Color.Primary">
+                        Добавить в заказ
+                    </MudButton>
+                    <MudButton OnClick="() => LeaveReview(product.Id)"
+                               Variant="Variant.Text"
+                               Color="MudBlazor.Color.Secondary">
+                        Оставить отзыв
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        }
     }
 </div>
 
@@ -46,15 +72,17 @@
     List<Request> _products = [];
     private List<string> uniqueTags = new List<string>();
     private string selectedTag = ""; // Выбранный тег
-
+    ClaimsPrincipal user = new();
     private IEnumerable<Request> FilteredProducts => selectedTag == "" 
             ? _products 
             : _products.Where(p => p.Tags.Contains(selectedTag));
 
     protected override async Task OnInitializedAsync()
     {
-        var client = _client;
-        var response = await client.GetAsync("api/product");
+        var authState = await _auth.GetAuthenticationStateAsync();
+        user = authState.User;
+
+        var response = await _client.GetAsync("api/product");
         _products = await response.Content.ReadFromJsonAsync<List<Request>>() ?? [];
 
         // Извлекаем уникальные теги
@@ -64,35 +92,27 @@
                               .ToList();
     }
 
+    void SoftDeleteProduct(Request prod)
+    {
+        DeleteRequest request = new DeleteRequest()
+            {
+                Id = prod.Id,
+            };
+
+        var res = _client.DeleteFromJsonAsync<DeleteRequest>($"/api/product?id={prod.Id}");
+
+
+    }
 
     private async Task AddToOrder(Guid id)
     {
-        if (!await _ls.ContainKeyAsync("JWT"))
-        {
-            _nm.NavigateTo("/login");
-        }
-
-        Guid orderId;
-        var jwt = await _ls.GetItemAsStringAsync("JWT");
-
-        var client = _client;
-
-        if (await _ls.ContainKeyAsync("order"))
-        {
-            orderId = Guid.Parse((await _ls.GetItemAsStringAsync("order"))!);
-        }
-        else
-        {
-            var openRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Order/open");
-            openRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
-            var openResponse = await client.SendAsync(openRequest);
-            var data = await openResponse.Content.ReadFromJsonAsync<Response>();
-            orderId = data!.Id;
-            await _ls.SetItemAsStringAsync("order", orderId.ToString());
-        }
+        var openRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Order/open");
+        var openResponse = await _client.SendAsync(openRequest);
+        var data = await openResponse.Content.ReadFromJsonAsync<Response>();
+        var orderId = data!.Id;
+        await _ls.SetItemAsStringAsync("order", orderId.ToString());
 
         var addRequest = new HttpRequestMessage(HttpMethod.Post, "/api/Order/add");
-        addRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
         addRequest.Content = JsonContent.Create(new
         {
             OrderId = orderId,
@@ -100,7 +120,7 @@
             Amount = 1
         });
 
-        await client.SendAsync(addRequest);
+        await _client.SendAsync(addRequest);
     }
 
     private void OnTagChange(string newTag)
@@ -123,6 +143,7 @@
         public double Price { get; set; }
         public string Tags { get; set; }
         public int Amount { get; set; }
+        public bool IsDeleted { get; set; }
     }
 
     class Response

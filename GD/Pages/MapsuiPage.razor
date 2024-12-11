@@ -13,20 +13,31 @@
 
 @page "/map2" 
 
-@inject HttpClient Http  // Inject HttpClient to make API calls 
+<div class="container">
+    <div class="row">
+        <div class="col border rounded p-2 canvas-container">
+            <MapControlComponent @ref="_mapControl" />
+        </div>
+    </div>
+</div>
 
-<div class="ma-0 pa-0 canvas-container"> 
-    <MapControlComponent @ref="_mapControl" /> 
-</div> 
+<style>
+    .canvas-container canvas {
+        width: 100%;
+        height: 80vh;
+    }
+</style>
 
-@code { 
+@code {
     private MapControl? _mapControl; 
     private Map? map; 
     private System.Timers.Timer? _timer; 
 
     protected override async Task OnInitializedAsync() 
-    { 
+    {
+        await Task.Delay(1000);
         await InitializeMap();
+
         StartTimer(); // Start the timer to fetch data
     } 
 
@@ -37,14 +48,12 @@
         { 
             SetupMap(); 
         } 
-    } 
-
+    }
     private async Task InitializeMap()
     {
         await GetAllUsers(); 
         await AddUserMarks(); 
     }
-
     private void StartTimer()
     {
         _timer = new System.Timers.Timer(5000); // Set timer to 5 seconds
@@ -52,7 +61,6 @@
         _timer.AutoReset = true; 
         _timer.Enabled = true; 
     }
-
     private async Task OnTimerElapsed()
     {
         if (_mapControl != null)
@@ -139,8 +147,10 @@
 
     private async Task GetAllUsers()
     {
-        var response = await Http.GetAsync("api/admin/allusers");
+        var response = await _client.GetAsync("api/admin/allusers");
         response.EnsureSuccessStatusCode();
         users = await response.Content.ReadFromJsonAsync<List<GDUserLocation>>() ?? new List<GDUserLocation>();
     }
 }
+
+

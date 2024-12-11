@@ -10,7 +10,9 @@ namespace GD.Api.Controllers.Base
         {
             get
             {
-                return Guid.Parse(User.FindFirst(GDUserClaimTypes.Id)!.Value);
+                var id = User.FindFirst(GDUserClaimTypes.Id);
+                Console.WriteLine("==============JWT ID " + id);
+                return Guid.Parse(id.Value);
             }
         }
         internal string? CurrentIp => HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();

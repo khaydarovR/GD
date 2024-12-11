@@ -11,7 +11,6 @@ namespace GD.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(AuthenticationSchemes = "Bearer", Policy = "client")]
 public class ClientController : CustomController
 {
     private readonly AppDbContext _appDbContext;
@@ -33,6 +32,7 @@ public class ClientController : CustomController
         return Ok();
     }
 
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [HttpPost("location")]
     public async Task<IActionResult> SetLocation(LocationRequest request)
     {
@@ -48,6 +48,7 @@ public class ClientController : CustomController
         return Ok(user);
     }
 
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [HttpGet("basket")]
     public async Task<IActionResult> GetBasket()
     {

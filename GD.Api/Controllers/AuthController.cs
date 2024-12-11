@@ -24,6 +24,11 @@ namespace GD.Api.Controllers
         public IActionResult GetInfo()
         {
             var user = context.Users.FirstOrDefault(u => u.Id == ContextUserId)!;
+            if (user == null)
+            {
+                return BadRequest("Не найден UserID в jwt");
+            }
+
             return Ok(new
             {
                 user.Id,

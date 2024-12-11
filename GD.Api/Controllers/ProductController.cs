@@ -53,21 +53,24 @@ public class ProductController : CustomController
     
     [HttpDelete]
     [Authorize(AuthenticationSchemes = "Bearer", Policy = "admin")]
-    public async Task<IActionResult> DeleteProduct([FromBody] DeleteRequest request)
+    public async Task<IActionResult> DeleteProduct([FromQuery] Guid id)
     {
-        var product = _appDbContext.Products.FirstOrDefault(p => p.Id == request.Id);
+        var product = _appDbContext.Products.FirstOrDefault(p => p.Id == id);
         if (product is null) return BadRequest("товар не найден");
-        
-        _appDbContext.Products.Remove(product);
+
+        product.IsDeleted = true;
+
         await _appDbContext.SaveChangesAsync();
         
-        return Ok(request.Id);
+        return Ok(product.Name);
     }
 
     [HttpGet]
     public IActionResult GetAllProducts()
     {
-        return Ok(_appDbContext.Products.Include(p => p.Feedbacks));
+        var response = _appDbContext.Products
+            .Include(p => p.Feedbacks);
+        return Ok(response);
     }
 
     [HttpGet("{id:guid}")]

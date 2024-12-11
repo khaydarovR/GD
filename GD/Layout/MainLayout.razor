@@ -35,6 +35,11 @@
         await GetClaimsPrincipalData();
     }
 
+    protected override void OnInitialized()
+    {
+        GetClaimsPrincipalData();
+    }
+
     private async Task GetClaimsPrincipalData()
     {
         var authState = await _auth
